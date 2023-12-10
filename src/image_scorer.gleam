@@ -101,7 +101,7 @@ fn serve_api(
 
 fn handle_json_message(
   state: Socket,
-  send: fn(BitArray) -> Result(_, error.Error),
+  send: fn(json.Json) -> Result(_, error.Error),
   json: BitArray,
 ) {
   case message.decode_type(json) {
@@ -109,12 +109,16 @@ fn handle_json_message(
       case rating.process(state.conn, json, rating.decode_image_rating) {
         Ok(rating.ImageRating(image, _rating)) -> {
           io.debug(image)
-          let assert Ok(_) = send(<<image:utf8>>)
+          let assert Ok(_) = send(object([#("image", string(image))]))
         }
         Error(error) -> {
           io.println("Invalid  process to rate")
           io.debug(error)
-          let assert Ok(_) = send(<<"ERROR":utf8>>)
+          let assert Ok(_) =
+            send(object([
+              #("message_type", string("get_rating")),
+              #("error", string("Could not rate the image")),
+            ]))
         }
       }
     }
@@ -123,35 +127,48 @@ fn handle_json_message(
       let assert Ok(_) =
         rating.process(state.conn, json, rating.decode_image)
         |> result.then(fn(image_rating) {
-          io.debug("Get rating")
           let assert rating.Rating(rating) = image_rating
-          Ok(object([#("rating", int(rating))]))
+          object([
+            #("message_type", string("get_rating")),
+            #("rating", int(rating)),
+          ])
+          |> send()
         })
-        |> result.then(encode_bit_array)
-        |> result.then(send)
-        |> result.or(send(<<"ERROR:INVALID_RATING":utf8>>))
+        |> result.lazy_or(fn() {
+          object([
+            #("message_type", string("get_rating")),
+            #("error", string("invalid rating")),
+          ])
+          |> send()
+        })
     }
 
     Error(error) -> {
       io.debug(error)
-      let assert Ok(_) = send(<<"ERROR":utf8>>)
+      let assert Ok(_) =
+        send(object([
+          #("message_type", string("get_rating")),
+          #("error", string("invalid")),
+        ]))
     }
   }
 }
 
-fn encode_bit_array(json: json.Json) -> Result(BitArray, error.Error) {
-  bit_array.base64_decode(json.to_string(json))
-  |> result.replace_error(error.BitDecode("Could not decode base64"))
+fn encode_bit_array(json_input: json.Json) -> BitArray {
+  bit_array.from_string(io.debug(json.to_string(json_input)))
 }
 
 fn handle_ws_message(state: Socket, conn, message) {
-  let send = fn(message: BitArray) {
-    function.curry2(mist.send_binary_frame)(conn)(message)
+  let send = fn(message: json.Json) {
+    function.curry2(mist.send_binary_frame)(conn)(
+      message
+      |> encode_bit_array,
+    )
     |> result.map_error(fn(e) { error.Socket(e) })
   }
   case message {
     mist.Text(<<"ping":utf8>>) -> {
-      let assert Ok(_) = send(<<"pong":utf8>>)
+      let assert Ok(_) = send(object([#("message_type", string("pong"))]))
       actor.continue(state)
     }
     mist.Binary(json) -> {
@@ -159,11 +176,16 @@ fn handle_ws_message(state: Socket, conn, message) {
       actor.continue(state)
     }
     mist.Text(_) | mist.Binary(_) -> {
-      let assert Ok(_) = send(<<"text AND binary?":utf8>>)
+      let assert Ok(_) =
+        send(object([#("message_type", string("text AND binary?"))]))
       actor.continue(state)
     }
     mist.Custom(message.Broadcast(text)) -> {
-      let assert Ok(_) = send(<<text:utf8>>)
+      let assert Ok(_) =
+        send(object([
+          #("message_type", string("broadcast")),
+          #("text", string(text)),
+        ]))
       actor.continue(state)
     }
     mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)

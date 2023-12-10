@@ -58,6 +58,7 @@ observer.observe(imageEle, { attributes: true });
 async function increment() {
   return new Promise((resolve, _reject) => {
     imageIdx += 1;
+		getScore(imagesList[imageIdx])
     resolve();
   }).then(imageLoad);
 }
@@ -66,8 +67,7 @@ async function decrement() {
   return new Promise((resolve, _reject) => {
     setTimeout(() => {
       imageIdx -= 1;
-      // if (imagesList[imageIdx]) {
-      // }
+			getScore(imagesList[imageIdx])
       resolve();
     }, 500);
   }).then(imageLoad);
@@ -94,9 +94,25 @@ function encode(message) {
   });
 }
 
+async function decode(message) {
+	const x = await message.data.text()
+	console.log(x)
+	return JSON.parse(x)
+}
+
 async function placeScore(image, score) {
-	socket.send(encode({ messageType: "rate", image, rating: score }));
+  socket.send(encode({ messageType: "rate", image, rating: score }));
   return setScoreValue(score);
+}
+
+async function getScore(image) {
+  socket.send(encode({ messageType: "get_rating", image }));
+
+  const eventListener = socket.addEventListener("message", async (message) => {
+		const { messageType, rating } = await decode(message);
+    console.log('score message', rating);
+    socket.removeEventListener("message", eventListener);
+  });
 }
 
 let scoreValueTimeout;
