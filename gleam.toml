@@ -19,6 +19,7 @@ gleam_otp = "~> 0.8"
 sqlight = "~> 0.9"
 gleam_json = "~> 0.7"
 filepath = "~> 0.1"
+glisten = "~> 0.9"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

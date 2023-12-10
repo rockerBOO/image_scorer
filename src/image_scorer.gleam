@@ -1,15 +1,17 @@
 import mist.{type Connection, type ResponseData}
 import gleam/erlang/process
 import gleam/bytes_builder
+import gleam/bit_array
 import gleam/otp/actor
 import gleam/option.{None, Some}
 import gleam/iterator
 import gleam/result
 import gleam/string
+import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{string}
+import gleam/json.{int, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
@@ -17,9 +19,11 @@ import sqlight
 import gleam/erlang
 import image_scorer/rating
 import image_scorer/message
+import image_scorer/db
+import image_scorer/error
 
 pub type Socket {
-  State(sql_conn: sqlight.Connection)
+  State(conn: sqlight.Connection)
 }
 
 pub fn main() {
@@ -29,31 +33,7 @@ pub fn main() {
     |> response.set_body(mist.Bytes(bytes_builder.new()))
 
   use conn <- sqlight.with_connection(":memory:")
-  // let image_scores_decoder = dynamic.tuple2(dynamic.string, dynamic.int)
-
-  let sql =
-    "
-  create table image_scores (image text, score int);
-
-  -- insert into image_scores (image, score) values 
-  -- ('abc.jpg', 3),
-  -- ('b.jpg', 9),
-  -- ('c.jpg', 6);
-  "
-  let assert Ok(Nil) = sqlight.exec(sql, conn)
-
-  // let sql =
-  //   "
-  // select image, score from image_scores
-  // where score > ?
-  // "
-  // let assert Ok([#("b.jpg", 9), #("c.jpg", 6)]) =
-  //   sqlight.query(
-  //     sql,
-  //     on: conn,
-  //     with: [sqlight.int(5)],
-  //     expecting: image_scores_decoder,
-  //   )
+  let assert Ok(_) = db.create_tables(conn)
 
   let assert Ok(priv) = erlang.priv_directory("image_scorer")
 
@@ -63,7 +43,7 @@ pub fn main() {
         ["ws"] ->
           mist.websocket(
             request: req,
-            on_init: fn(_conn) { #(State(sql_conn: conn), Some(selector)) },
+            on_init: fn(_conn) { #(State(conn: conn), Some(selector)) },
             on_close: fn(_state) { io.println("goodbye!") },
             handler: handle_ws_message,
           )
@@ -119,41 +99,62 @@ fn serve_api(
   |> response.set_header("content-type", "text/plain")
 }
 
+fn encode_bit_array(json: json.Json) -> Result(BitArray, error.Error) {
+  bit_array.base64_decode(json.to_string(json))
+  |> result.replace_error(error.BitDecode("Could not decode base64"))
+}
+
 fn handle_ws_message(state: Socket, conn, message) {
+  let send = fn(message: BitArray) {
+    function.curry2(mist.send_binary_frame)(conn)(message)
+    |> result.map_error(fn(e) { error.Socket(e) })
+  }
   case message {
     mist.Text(<<"ping":utf8>>) -> {
-      let assert Ok(_) = mist.send_binary_frame(conn, <<"pong":utf8>>)
+      let assert Ok(_) = send(<<"pong":utf8>>)
       actor.continue(state)
     }
     mist.Binary(json) -> {
       case message.decode_type(json) {
-        Ok(message.RatingType("rating")) -> {
-          case rating.process(state.sql_conn, json) {
+        Ok(message.RatingType("rate")) -> {
+          case rating.process(state.conn, json, rating.decode_image_rating) {
             Ok(rating.ImageRating(image, _rating)) -> {
               io.debug(image)
-              let assert Ok(_) = mist.send_binary_frame(conn, <<image:utf8>>)
+              // let assert Ok(_) = mist.send_binary_frame(conn, <<image:utf8>>)
+              let assert Ok(_) = send(<<image:utf8>>)
             }
             Error(error) -> {
               io.debug(error)
-              let assert Ok(_) = mist.send_binary_frame(conn, <<"ERROR":utf8>>)
+              let assert Ok(_) = send(<<"ERROR":utf8>>)
             }
           }
         }
+        Ok(message.RatingType("get_rating")) -> {
+          let assert Ok(_) =
+            rating.process(state.conn, json, rating.decode_image)
+            |> result.then(fn(image_rating) {
+              let assert rating.Rating(rating) = image_rating
+              Ok(object([#("rating", int(rating))]))
+            })
+            |> result.then(encode_bit_array)
+            |> result.then(send)
+            |> result.or(send(<<"ERROR:INVALID_RATING":utf8>>))
+        }
+
         Error(error) -> {
           io.debug(error)
-          let assert Ok(_) = mist.send_binary_frame(conn, <<"ERROR":utf8>>)
+          let assert Ok(_) = send(<<"ERROR":utf8>>)
         }
       }
 
       actor.continue(state)
     }
     mist.Text(_) | mist.Binary(_) -> {
-      let assert Ok(_) =
-        mist.send_binary_frame(conn, <<"text AND binary?":utf8>>)
+      let assert Ok(_) = send(<<"text AND binary?":utf8>>)
       actor.continue(state)
     }
     mist.Custom(message.Broadcast(text)) -> {
-      let assert Ok(_) = mist.send_binary_frame(conn, <<text:utf8>>)
+      let assert Ok(_) = send(<<text:utf8>>)
       actor.continue(state)
     }
     mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)

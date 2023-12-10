@@ -1,6 +1,12 @@
 import gleam/json
 import gleam/dynamic
 
+pub type Rating {
+  ImageRating(image: String, rating: Int)
+  Rating(rating: Int)
+  Image(image: String)
+}
+
 pub type Message {
   Broadcast(String)
   RatingType(String)
