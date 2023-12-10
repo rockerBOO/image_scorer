@@ -8,7 +8,7 @@ pub type RatingMessage {
   ImageRating(image: String, rating: Int)
 }
 
-fn save(
+pub fn save(
   conn: sqlight.Connection,
   image: String,
   rating: Int,
@@ -47,7 +47,7 @@ pub fn process(
   }
 }
 
-fn decode(json: BitArray) -> Result(RatingMessage, json.DecodeError) {
+pub fn decode(json: BitArray) -> Result(RatingMessage, json.DecodeError) {
   json.decode_bits(
     from: json,
     using: dynamic.decode2(
