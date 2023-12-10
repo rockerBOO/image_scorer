@@ -99,6 +99,46 @@ fn serve_api(
   |> response.set_header("content-type", "text/plain")
 }
 
+fn handle_json_message(
+  state: Socket,
+  send: fn(BitArray) -> Result(_, error.Error),
+  json: BitArray,
+) {
+  case message.decode_type(json) {
+    Ok(message.RatingType("rate")) -> {
+      case rating.process(state.conn, json, rating.decode_image_rating) {
+        Ok(rating.ImageRating(image, _rating)) -> {
+          io.debug(image)
+          let assert Ok(_) = send(<<image:utf8>>)
+        }
+        Error(error) -> {
+          io.println("Invalid  process to rate")
+          io.debug(error)
+          let assert Ok(_) = send(<<"ERROR":utf8>>)
+        }
+      }
+    }
+    Ok(message.RatingType("get_rating")) -> {
+      io.debug("Get OK")
+      let assert Ok(_) =
+        rating.process(state.conn, json, rating.decode_image)
+        |> result.then(fn(image_rating) {
+          io.debug("Get rating")
+          let assert rating.Rating(rating) = image_rating
+          Ok(object([#("rating", int(rating))]))
+        })
+        |> result.then(encode_bit_array)
+        |> result.then(send)
+        |> result.or(send(<<"ERROR:INVALID_RATING":utf8>>))
+    }
+
+    Error(error) -> {
+      io.debug(error)
+      let assert Ok(_) = send(<<"ERROR":utf8>>)
+    }
+  }
+}
+
 fn encode_bit_array(json: json.Json) -> Result(BitArray, error.Error) {
   bit_array.base64_decode(json.to_string(json))
   |> result.replace_error(error.BitDecode("Could not decode base64"))
@@ -115,38 +155,7 @@ fn handle_ws_message(state: Socket, conn, message) {
       actor.continue(state)
     }
     mist.Binary(json) -> {
-      case message.decode_type(json) {
-        Ok(message.RatingType("rate")) -> {
-          case rating.process(state.conn, json, rating.decode_image_rating) {
-            Ok(rating.ImageRating(image, _rating)) -> {
-              io.debug(image)
-              // let assert Ok(_) = mist.send_binary_frame(conn, <<image:utf8>>)
-              let assert Ok(_) = send(<<image:utf8>>)
-            }
-            Error(error) -> {
-              io.debug(error)
-              let assert Ok(_) = send(<<"ERROR":utf8>>)
-            }
-          }
-        }
-        Ok(message.RatingType("get_rating")) -> {
-          let assert Ok(_) =
-            rating.process(state.conn, json, rating.decode_image)
-            |> result.then(fn(image_rating) {
-              let assert rating.Rating(rating) = image_rating
-              Ok(object([#("rating", int(rating))]))
-            })
-            |> result.then(encode_bit_array)
-            |> result.then(send)
-            |> result.or(send(<<"ERROR:INVALID_RATING":utf8>>))
-        }
-
-        Error(error) -> {
-          io.debug(error)
-          let assert Ok(_) = send(<<"ERROR":utf8>>)
-        }
-      }
-
+      let assert Ok(_) = handle_json_message(state, send, json)
       actor.continue(state)
     }
     mist.Text(_) | mist.Binary(_) -> {

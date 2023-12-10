@@ -1,6 +1,7 @@
 import gleam/dynamic
 import gleam/json
 import sqlight
+import gleam/io
 import gleam/list
 import gleam/result
 import image_scorer/error
@@ -73,6 +74,7 @@ pub fn get(
 pub fn decode_image_rating(
   json: BitArray,
 ) -> Result(message.Rating, json.DecodeError) {
+  io.debug(json)
   json.decode_bits(
     from: json,
     using: dynamic.decode2(

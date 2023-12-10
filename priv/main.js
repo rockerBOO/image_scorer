@@ -95,7 +95,7 @@ function encode(message) {
 }
 
 async function placeScore(image, score) {
-	socket.send(encode({ messageType: "rating", image, rating: score }));
+	socket.send(encode({ messageType: "rate", image, rating: score }));
   return setScoreValue(score);
 }
 
