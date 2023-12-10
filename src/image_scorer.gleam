@@ -119,7 +119,6 @@ fn serve_api(
   |> response.set_header("content-type", "text/plain")
 }
 
-
 fn handle_ws_message(state: Socket, conn, message) {
   case message {
     mist.Text(<<"ping":utf8>>) -> {
