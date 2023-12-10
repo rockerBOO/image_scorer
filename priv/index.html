@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <link rel="stylesheet" href="/static/main.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Image score</h1>
+
+      <form id="rating">
+        <div>
+          <img id="image" src="/static/images.png" />
+        </div>
+        <div id="ratings">
+          <div class="back">
+            <input id="back" type="button" value="Back" loading="lazy" />
+          </div>
+          <div>
+            <input type="submit" value="1" />
+            <input type="submit" value="2" />
+            <input type="submit" value="3" />
+            <input type="submit" value="4" />
+            <input type="submit" value="5" />
+            <input type="submit" value="6" />
+            <input type="submit" value="7" />
+            <input type="submit" value="8" />
+            <input type="submit" value="9" />
+            <input type="submit" value="10" />
+          </div>
+          <div class="skip"><input id="skip" type="button" value="Skip" /></div>
+        </div>
+      </form>
+    </main>
+    <div id="score-container" class="score"><div id="score-value"></div></div>
+    <script src="/static/main.js"></script>
+  </body>
+</html>
