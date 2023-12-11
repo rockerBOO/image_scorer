@@ -6,3 +6,5 @@ erl_crash.dump
 images
 
 priv/images.json
+
+ratings.db

@@ -7,7 +7,7 @@ import argparse
 # Set the directory you want to index here. "." is the current directory that you are in
 IMAGE_DIR = "."
 IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".avif"]
-IMAGE_JSON = "images.json"
+IMAGE_JSON = "priv/images.json"
 
 
 def get_files(file_list, file_exts=[]):
@@ -42,6 +42,9 @@ if __name__ == "__main__":
 
     cwd = Path(IMAGE_DIR)
     files = get_files(cwd, args.exts)
+
+    files = [file for file in files if ("mask" in str(file)) is False]
+    print(files)
 
     with open(Path(args.json_file), "w") as f:
         json.dump([str(file) for file in files], f)

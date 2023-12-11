@@ -32,7 +32,7 @@ pub fn main() {
     response.new(404)
     |> response.set_body(mist.Bytes(bytes_builder.new()))
 
-  use conn <- sqlight.with_connection(":memory:")
+  use conn <- sqlight.with_connection("ratings.db")
   let assert Ok(_) = db.create_tables(conn)
 
   let assert Ok(priv) = erlang.priv_directory("image_scorer")
@@ -47,8 +47,6 @@ pub fn main() {
             on_close: fn(_state) { io.println("goodbye!") },
             handler: handle_ws_message,
           )
-        // ["echo"] -> echo_body(req)
-        // ["chunk"] -> serve_chunk(req)
         ["images", ..rest] -> serve_image(req, rest)
         ["static", ..rest] -> serve_file(req, rest, priv)
         ["form"] -> handle_form(req, conn)
@@ -106,15 +104,11 @@ fn handle_json_message(
 ) {
   case message.decode_type(json) {
     Ok(message.RatingType("rate")) -> {
-      io.println("RATE")
-
       case rating.process(state.conn, json, rating.decode_image_rating) {
         Ok(rating.ImageRating(image, _rating)) -> {
-          io.debug(image)
           let assert Ok(_) = send(object([#("image", string(image))]))
         }
         Error(error) -> {
-          io.println("Invalid  process to rate")
           io.debug(error)
           let assert Ok(_) =
             send(object([
@@ -125,7 +119,6 @@ fn handle_json_message(
       }
     }
     Ok(message.RatingType("get_rating")) -> {
-      io.debug("Get OK")
       case rating.process(state.conn, json, rating.decode_image) {
         Ok(rating.Rating(rating)) ->
           object([
@@ -151,7 +144,7 @@ fn handle_json_message(
 }
 
 fn encode_bit_array(json_input: json.Json) -> BitArray {
-  bit_array.from_string(io.debug(json.to_string(json_input)))
+  bit_array.from_string(json.to_string(json_input))
 }
 
 fn handle_ws_message(state: Socket, conn, message) {

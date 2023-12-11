@@ -59,9 +59,9 @@ async function increment() {
   return new Promise((resolve, _reject) => {
     imageIdx += 1;
 
-		if (imageIdx >= imagesList.length - 1) {
-			imagesList = 0;
-		}
+    if (imageIdx >= imagesList.length - 1) {
+      imagesList = 0;
+    }
     getScore(imagesList[imageIdx]);
     resolve();
   }).then(imageLoad);
@@ -71,10 +71,9 @@ async function decrement() {
   return new Promise((resolve, _reject) => {
     setTimeout(() => {
       imageIdx -= 1;
-			if (imageIdx == -1) {
-				imageIdx = imagesList.length - 1;
-			}
-      console.log("decremented", imageIdx);
+      if (imageIdx == -1) {
+        imageIdx = imagesList.length - 1;
+      }
       getScore(imagesList[imageIdx]);
       resolve();
     }, 500);
@@ -111,9 +110,9 @@ async function placeScore(image, score) {
     return;
   }
 
-	if (!image) {
-		console.error("image wtf")
-	}
+  if (!image) {
+    console.error("image wtf");
+  }
 
   ws.send(encode({ messageType: "rate", image, rating: score }));
   return setScoreValue(score);
@@ -127,7 +126,6 @@ async function getScore(image) {
 
   const listener = async (event) => {
     const { messageType, rating } = await decode(event.data);
-    console.log("score message", rating);
     ws.removeEventListener("message", listener);
   };
 
@@ -157,9 +155,9 @@ async function connect() {
       resolve(ws);
     });
 
-    ws.addEventListener("message", async (event) => {
-      console.log("Message from server ", await decode(event.data));
-    });
+    // ws.addEventListener("message", async (event) => {
+    //   console.log("Message from server ", await decode(event.data));
+    // });
 
     ws.onclose = function (e) {
       console.log(
@@ -231,7 +229,7 @@ rating.addEventListener("submit", (e) => {
       return;
     }
   }
-  console.log('submit rating', e.submitter.value);
+  // console.log('submit rating', e.submitter.value);
   placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
 });
 

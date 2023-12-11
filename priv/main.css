@@ -141,11 +141,10 @@ input[type="submit"]:focus {
   object-fit: scale-down;
   max-height: 75vh;
   transition: 400ms all ease-out;
-
 }
 
 #image.loading {
   animation:
     1.5s fade-in,
-    1.0s scale-in;
+    1s scale-in;
 }

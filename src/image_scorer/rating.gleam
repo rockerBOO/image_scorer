@@ -1,7 +1,7 @@
 import gleam/dynamic
 import gleam/json
 import sqlight
-import gleam/io
+import gleam/pair
 import gleam/list
 import gleam/result
 import image_scorer/error
@@ -19,11 +19,6 @@ pub fn save(
   let sql = "insert into image_scores (image, score) values (?, ?);"
   let insert_id = dynamic.int
   let assert ImageRating(image, rating) = image_rating
-
-  io.println("SAVE")
-  io.debug(image)
-  io.debug(rating)
-
   case
     sqlight.query(
       sql,
@@ -34,7 +29,7 @@ pub fn save(
   {
     Ok(_v) ->
       case sqlight.exec(sql, conn) {
-        Ok(_) -> io.debug(Ok(ImageRating(image, rating)))
+        Ok(_) -> Ok(ImageRating(image, rating))
         Error(err) -> Error(error.SqlError(err))
       }
     Error(err) -> Error(error.SqlError(err))
@@ -59,17 +54,18 @@ pub fn get(
   image: String,
 ) -> Result(ImageRating, error.Error) {
   sqlight.query(
-    "select score from image_scores where image = ?",
+    "select score, 0 from image_scores where image = ?",
     conn,
     [sqlight.text(image)],
-    expecting: dynamic.int,
+    expecting: dynamic.tuple2(dynamic.int, dynamic.int),
   )
-  |> result.map_error(fn(e) { io.debug(error.SqlError(e)) })
+  |> result.map_error(fn(e) { error.SqlError(e) })
   |> result.map(fn(v) {
     Rating(
       v
       |> list.last
-      |> result.unwrap(-1),
+      |> result.unwrap(#(-1, -1))
+      |> pair.first(),
     )
   })
 }
@@ -77,7 +73,6 @@ pub fn get(
 pub fn decode_image_rating(
   json: BitArray,
 ) -> Result(message.Rating, json.DecodeError) {
-  io.debug(json)
   json.decode_bits(
     from: json,
     using: dynamic.decode2(
