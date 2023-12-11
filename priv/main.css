@@ -148,3 +148,31 @@ input[type="submit"]:focus {
     1.5s fade-in,
     1s scale-in;
 }
+
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(25em, 1fr));
+    grid-gap: 10vmin;
+    margin: 10vmin;
+}
+
+.small-grid {
+    grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+    /* grid-template-rows: repeat(auto-fit, minmax(10em, 1fr)); */
+    grid-gap: 10vmin;
+    margin: 10vmin;
+}
+
+#images > div {
+    max-width: 100%;
+    max-height: 75vh;
+    display:grid;
+    align-items:center;
+    justify-items: center;
+}
+
+.block > img {
+    max-height: 100%;
+    max-width: 100%;
+
+}

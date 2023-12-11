@@ -1,6 +1,7 @@
 import gleam/dynamic
 import gleam/json
 import sqlight
+import gleam/dict
 import gleam/pair
 import gleam/list
 import gleam/result
@@ -10,6 +11,7 @@ import image_scorer/message
 pub type ImageRating {
   ImageRating(image: String, rating: Int)
   Rating(Int)
+  Image(String)
 }
 
 pub fn save(
@@ -70,6 +72,18 @@ pub fn get(
   })
 }
 
+pub fn get_ratings(
+  conn: sqlight.Connection,
+) -> Result(List(#(String, Int)), error.Error) {
+  sqlight.query(
+    "select image, score  from image_scores",
+    conn,
+    [],
+    expecting: dynamic.tuple2(dynamic.string, dynamic.int),
+  )
+  |> result.map_error(fn(e) { error.SqlError(e) })
+}
+
 pub fn decode_image_rating(
   json: BitArray,
 ) -> Result(message.Rating, json.DecodeError) {
@@ -80,6 +94,19 @@ pub fn decode_image_rating(
       dynamic.field("image", of: dynamic.string),
       dynamic.field("rating", of: dynamic.int),
     ),
+  )
+}
+
+pub fn decode_images(
+  json: BitArray,
+) -> Result(List(ImageRating), json.DecodeError) {
+  json.decode_bits(
+    from: json,
+    using: dynamic.list(dynamic.decode2(
+      ImageRating,
+      dynamic.field("image", of: dynamic.string),
+      dynamic.field("rating", of: dynamic.int),
+    )),
   )
 }
 

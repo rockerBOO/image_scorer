@@ -6,12 +6,15 @@ import gleam/otp/actor
 import gleam/option.{None, Some}
 import gleam/iterator
 import gleam/result
+import gleam/pair
+import gleam/dynamic
 import gleam/string
+import gleam/dict
 import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{int, null, object, string}
+import gleam/json.{int, null, nullable, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
@@ -50,6 +53,7 @@ pub fn main() {
         ["images", ..rest] -> serve_image(req, rest)
         ["static", ..rest] -> serve_file(req, rest, priv)
         ["form"] -> handle_form(req, conn)
+        ["ratings.html"] -> serve_file(req, ["ratings.html"], priv)
         ["index.html"] -> serve_index_file(req, priv)
         ["api", ..rest] -> serve_api(req, conn, rest)
         [] -> serve_index_file(req, priv)
@@ -129,6 +133,77 @@ fn handle_json_message(
         Error(error.NoResult) ->
           object([#("message_type", string("get_rating")), #("rating", null())])
           |> send()
+      }
+    }
+    Ok(message.RatingType("get_ratings")) -> {
+      case
+        json.decode_bits(from: json, using: dynamic.list(of: dynamic.string))
+      {
+        Ok(_ratings) -> {
+          case rating.get_ratings(state.conn) {
+            Ok(ratings) -> {
+              let assert Ok(_) =
+                object([
+                  #("message_type", string("get_ratings")),
+                  #(
+                    "ratings",
+                    object(
+                      ratings
+                      |> list.fold(
+                        dict.new(),
+                        fn(d, ratings) {
+                          let v =
+                            ratings
+                            |> pair.map_second(fn(v) { int(v) })
+
+                          d
+                          |> dict.insert(v.0, v.1)
+                        },
+                      )
+                      // |> dict.map_values(fn(_k, v) { int(v) })
+                      // |> dict.fold(
+                      //   d,
+                      //   fn(d, key, v) {
+                      //     d
+                      //     |> dict.insert(key, v)
+                      //   },
+                      // )
+                      |> dict.to_list(),
+                    ),
+                  ),
+                ])
+                |> send()
+            }
+
+            // json.decode_bits(
+            //   from: json,
+            //   using: dynamic.list(dynamic.decode2(
+            //     rating.ImageRating,
+            //     dynamic.field("image", of: dynamic.string),
+            //     dynamic.field("rating", of: dynamic.int),
+            //   )),
+            // )
+            Error(error.NoResult) -> {
+              let assert Ok(_) =
+                object([
+                  #("message_type", string("get_ratings")),
+                  #("rating", null()),
+                ])
+                |> send()
+            }
+          }
+        }
+
+        Error(err) -> {
+          io.println("Error here")
+          io.debug(err)
+          let assert Ok(_) =
+            object([
+              #("message_type", string("get_ratings")),
+              #("ratings", nullable(None, of: int)),
+            ])
+            |> send()
+        }
       }
     }
 

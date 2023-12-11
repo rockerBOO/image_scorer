@@ -1,10 +1,3 @@
-let imagesList = [];
-let imageIdx = 0;
-let clickRated;
-
-const imageEle = document.querySelector("#image");
-const scoreContainerEle = document.querySelector("#score-container");
-const scoreValueEle = document.querySelector("#score-value");
 
 function debounce(callback, delay) {
   let timeout;
@@ -46,14 +39,14 @@ const loadingAnimation = () => {
   }, 1000);
 };
 
-observer = new MutationObserver((changes) => {
-  changes.forEach((e) => {
-    if (e.attributeName === "src") {
-      loadingAnimation();
-    }
-  });
-});
-observer.observe(imageEle, { attributes: true });
+// observer = new MutationObserver((changes) => {
+//   changes.forEach((e) => {
+//     if (e.attributeName === "src") {
+//       loadingAnimation();
+//     }
+//   });
+// });
+// observer.observe(imageEle, { attributes: true });
 
 async function increment() {
   return new Promise((resolve, _reject) => {
@@ -95,13 +88,13 @@ function clickRate() {
   }, 1000);
 }
 
-function encode(message) {
+export function encode(message) {
   return new Blob([JSON.stringify(message, null, 2)], {
     type: "application/json",
   });
 }
 
-async function decode(data) {
+export async function decode(data) {
   return JSON.parse(await data.text());
 }
 
@@ -146,6 +139,14 @@ let wsBackoffCeil = 10_000;
 
 let connected = () => ws && ws.readyState == 1;
 
+export async function send(v) {
+    return ws.send(v) 
+}
+
+export function getWS() {
+    return ws;
+}
+
 async function connect() {
   return new Promise((resolve) => {
     ws = new WebSocket("ws://localhost:3030/ws");
@@ -180,118 +181,7 @@ async function connect() {
     };
   });
 }
-
+console.log('connecting..')
 connect();
 
-fetch("/static/images.json")
-  .then((resp) => {
-    if (!resp.ok) {
-      throw new Error("Could not load images.json");
-    }
 
-    return resp.json();
-  })
-  .then((images) => {
-    console.log(images);
-    imageIdx = 0;
-    imagesList = shuffle(images);
-    increment();
-  })
-  .catch((err) => {
-    console.error(err);
-  });
-
-let scoreValueTimeout;
-
-async function setScoreValue(score) {
-  return new Promise((resolve, _reject) => {
-    if (scoreValueTimeout) {
-      clearTimeout(scoreValueTimeout);
-    }
-    scoreValueEle.textContent = score;
-    scoreValueEle.style.animation = "";
-    scoreValueEle.style.animation = null;
-    scoreValueEle.classList.add("scored");
-    scoreValueTimeout = setTimeout(() => {
-      scoreValueEle.classList.remove("scored");
-      resolve(score);
-    }, 240);
-  });
-}
-
-const rating = document.querySelector("#rating");
-rating.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  // Limit double, and rapid scoring
-  if (e.key in pressScoreList) {
-    if (clickRated) {
-      return;
-    }
-  }
-  // console.log('submit rating', e.submitter.value);
-  placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
-});
-
-const skipEle = document.querySelector("#skip");
-const backEle = document.querySelector("#back");
-const skipFun = () => {
-  setScoreValue("skipped").then(increment);
-};
-const backFun = () => {
-  decrement();
-};
-skipEle.addEventListener("click", skipFun);
-backEle.addEventListener("click", backFun);
-
-const pressScoreList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
-window.addEventListener(
-  "keypress",
-  debounce((e) => {
-    // Limit double, and rapid scoring
-    if (e.key in pressScoreList) {
-      if (clickRated) {
-        return;
-      }
-    }
-
-    if (e.key == "1") {
-      placeScore(imagesList[imageIdx], 1).then(increment);
-    } else if (e.key == "2") {
-      placeScore(imagesList[imageIdx], 2).then(increment);
-    } else if (e.key == "3") {
-      placeScore(imagesList[imageIdx], 3).then(increment);
-    } else if (e.key == "4") {
-      placeScore(imagesList[imageIdx], 4).then(increment);
-    } else if (e.key == "5") {
-      placeScore(imagesList[imageIdx], 5).then(increment);
-    } else if (e.key == "6") {
-      placeScore(imagesList[imageIdx], 6).then(increment);
-    } else if (e.key == "7") {
-      placeScore(imagesList[imageIdx], 7).then(increment);
-    } else if (e.key == "8") {
-      placeScore(imagesList[imageIdx], 8).then(increment);
-    } else if (e.key == "9") {
-      placeScore(imagesList[imageIdx], 9).then(increment);
-    } else if (e.key == "0") {
-      placeScore(imagesList[imageIdx], 10).then(increment);
-    } else if (e.key == "-") {
-      decrement();
-    } else if (e.key == "u") {
-      skipFun();
-    } else if (e.key == "d") {
-      decrement();
-    } else if (e.key == "j") {
-      skipFun();
-    } else if (e.key == "f") {
-      decrement();
-    } else if (e.key == "b") {
-      decrement();
-    } else if (e.key == "s") {
-      skipFun();
-    } else if (e.key == " ") {
-      skipFun();
-    }
-    console.log(e.key);
-  }, 300),
-);
