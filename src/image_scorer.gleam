@@ -11,7 +11,7 @@ import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{int, object, string}
+import gleam/json.{int, null, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
@@ -106,6 +106,8 @@ fn handle_json_message(
 ) {
   case message.decode_type(json) {
     Ok(message.RatingType("rate")) -> {
+      io.println("RATE")
+
       case rating.process(state.conn, json, rating.decode_image_rating) {
         Ok(rating.ImageRating(image, _rating)) -> {
           io.debug(image)
@@ -124,23 +126,17 @@ fn handle_json_message(
     }
     Ok(message.RatingType("get_rating")) -> {
       io.debug("Get OK")
-      let assert Ok(_) =
-        rating.process(state.conn, json, rating.decode_image)
-        |> result.then(fn(image_rating) {
-          let assert rating.Rating(rating) = image_rating
+      case rating.process(state.conn, json, rating.decode_image) {
+        Ok(rating.Rating(rating)) ->
           object([
             #("message_type", string("get_rating")),
             #("rating", int(rating)),
           ])
           |> send()
-        })
-        |> result.lazy_or(fn() {
-          object([
-            #("message_type", string("get_rating")),
-            #("error", string("invalid rating")),
-          ])
+        Error(error.NoResult) ->
+          object([#("message_type", string("get_rating")), #("rating", null())])
           |> send()
-        })
+      }
     }
 
     Error(error) -> {

@@ -58,7 +58,11 @@ observer.observe(imageEle, { attributes: true });
 async function increment() {
   return new Promise((resolve, _reject) => {
     imageIdx += 1;
-		getScore(imagesList[imageIdx])
+
+		if (imageIdx >= imagesList.length - 1) {
+			imagesList = 0;
+		}
+    getScore(imagesList[imageIdx]);
     resolve();
   }).then(imageLoad);
 }
@@ -67,7 +71,11 @@ async function decrement() {
   return new Promise((resolve, _reject) => {
     setTimeout(() => {
       imageIdx -= 1;
-			getScore(imagesList[imageIdx])
+			if (imageIdx == -1) {
+				imageIdx = imagesList.length - 1;
+			}
+      console.log("decremented", imageIdx);
+      getScore(imagesList[imageIdx]);
       resolve();
     }, 500);
   }).then(imageLoad);
@@ -94,54 +102,88 @@ function encode(message) {
   });
 }
 
-async function decode(message) {
-	const x = await message.data.text()
-	console.log(x)
-	return JSON.parse(x)
+async function decode(data) {
+  return JSON.parse(await data.text());
 }
 
 async function placeScore(image, score) {
-  socket.send(encode({ messageType: "rate", image, rating: score }));
+  if (!connected()) {
+    return;
+  }
+
+	if (!image) {
+		console.error("image wtf")
+	}
+
+  ws.send(encode({ messageType: "rate", image, rating: score }));
   return setScoreValue(score);
 }
 
 async function getScore(image) {
-  socket.send(encode({ messageType: "get_rating", image }));
+  if (!connected()) {
+    return;
+  }
+  ws.send(encode({ messageType: "get_rating", image }));
 
-  const eventListener = socket.addEventListener("message", async (message) => {
-		const { messageType, rating } = await decode(message);
-    console.log('score message', rating);
-    socket.removeEventListener("message", eventListener);
+  const listener = async (event) => {
+    const { messageType, rating } = await decode(event.data);
+    console.log("score message", rating);
+    ws.removeEventListener("message", listener);
+  };
+
+  ws.addEventListener("message", listener);
+
+  // Make sure we remove the listener if anything fails
+  setTimeout(() => {
+    ws.removeEventListener("message", listener);
+  }, 5000);
+}
+
+// WebSocket
+//
+let ws;
+let wsBackoffRate = 1000;
+let wsBackoffTotal = 0;
+let wsBackoffCeil = 10_000;
+
+let connected = () => ws && ws.readyState == 1;
+
+async function connect() {
+  return new Promise((resolve) => {
+    ws = new WebSocket("ws://localhost:3030/ws");
+
+    ws.addEventListener("open", () => {
+      ws.send("Hello Server!");
+      resolve(ws);
+    });
+
+    ws.addEventListener("message", async (event) => {
+      console.log("Message from server ", await decode(event.data));
+    });
+
+    ws.onclose = function (e) {
+      console.log(
+        "Socket is closed. Reconnect will be attempted in 1 second.",
+        e.reason,
+      );
+      const start = Date.now();
+      setTimeout(function () {
+        const end = Date.now();
+        if (wsBackoffTotal <= wsBackoffCeil) {
+          wsBackoffTotal += (end - start) * wsBackoffRate;
+        }
+        return connect();
+      }, Math.log(wsBackoffTotal));
+    };
+
+    ws.onerror = function (err) {
+      console.error("Socket encountered error: ", err.message, "Closing ws");
+      ws.close();
+    };
   });
 }
 
-let scoreValueTimeout;
-
-async function setScoreValue(score) {
-  return new Promise((resolve, _reject) => {
-    if (scoreValueTimeout) {
-      clearTimeout(scoreValueTimeout);
-    }
-    scoreValueEle.textContent = score;
-    scoreValueEle.style.animation = "";
-    scoreValueEle.style.animation = null;
-    scoreValueEle.classList.add("scored");
-    scoreValueTimeout = setTimeout(() => {
-      scoreValueEle.classList.remove("scored");
-      resolve(score);
-    }, 240);
-  });
-}
-
-const socket = new WebSocket("ws://localhost:3030/ws");
-
-socket.addEventListener("open", () => {
-  socket.send("Hello Server!");
-});
-
-socket.addEventListener("message", (event) => {
-  console.log("Message from server ", event.data);
-});
+connect();
 
 fetch("/static/images.json")
   .then((resp) => {
@@ -161,6 +203,24 @@ fetch("/static/images.json")
     console.error(err);
   });
 
+let scoreValueTimeout;
+
+async function setScoreValue(score) {
+  return new Promise((resolve, _reject) => {
+    if (scoreValueTimeout) {
+      clearTimeout(scoreValueTimeout);
+    }
+    scoreValueEle.textContent = score;
+    scoreValueEle.style.animation = "";
+    scoreValueEle.style.animation = null;
+    scoreValueEle.classList.add("scored");
+    scoreValueTimeout = setTimeout(() => {
+      scoreValueEle.classList.remove("scored");
+      resolve(score);
+    }, 240);
+  });
+}
+
 const rating = document.querySelector("#rating");
 rating.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -171,15 +231,20 @@ rating.addEventListener("submit", (e) => {
       return;
     }
   }
-  console.log(e.submitter.value);
+  console.log('submit rating', e.submitter.value);
   placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
 });
 
 const skipEle = document.querySelector("#skip");
+const backEle = document.querySelector("#back");
 const skipFun = () => {
   setScoreValue("skipped").then(increment);
 };
+const backFun = () => {
+  decrement();
+};
 skipEle.addEventListener("click", skipFun);
+backEle.addEventListener("click", backFun);
 
 const pressScoreList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 window.addEventListener(

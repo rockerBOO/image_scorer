@@ -7,6 +7,7 @@ pub type Error {
   SqlError(sqlight.Error)
   BitDecode(String)
   Socket(socket.SocketReason)
+  NoResult
   Message(String)
   Invalid
 }
