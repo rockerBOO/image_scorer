@@ -14,14 +14,16 @@ import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{int, null, nullable, object, string}
+import gleam/json.{array, int, null, nullable, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
 import sqlight
 import gleam/erlang
 import image_scorer/rating
+import image_scorer/preference
 import image_scorer/message
+import image_scorer/user
 import image_scorer/db
 import image_scorer/error
 
@@ -124,6 +126,57 @@ fn handle_json_message(
         }
       }
     }
+    Ok(message.PreferenceType("prefer")) -> {
+      let decode_image =
+        dynamic.decode2(
+          preference.Image,
+          dynamic.field("file", dynamic.string),
+          dynamic.field("hash", dynamic.string),
+        )
+      case
+        json.decode_bits(
+          from: json,
+          using: dynamic.decode3(
+            message.Prefer,
+            dynamic.field("user", dynamic.field("hash", dynamic.string)),
+            dynamic.field("image", decode_image),
+            dynamic.field("others", dynamic.list(decode_image)),
+          ),
+        )
+      {
+        Ok(message.Prefer(user_hash, image, others)) -> {
+          case preference.set_preference(state.conn, user_hash, image, others) {
+            Ok(v) -> {
+              io.debug(v)
+              object([
+                #("message_type", string("prefer")),
+                #("error", string("got your preference save")),
+              ])
+              |> send()
+            }
+            Error(error) -> {
+              io.debug(error)
+
+              io.debug(error)
+              object([
+                #("message_type", string("prefer")),
+                #("error", string("could not process")),
+              ])
+              |> send()
+            }
+          }
+        }
+        Error(error) -> {
+          io.debug(error)
+          object([
+            #("message_type", string("prefer")),
+            #("error", string("could not process")),
+          ])
+          |> send()
+        }
+      }
+    }
+
     Ok(message.RatingType("get_rating")) -> {
       case rating.process(state.conn, json, rating.decode_image) {
         Ok(rating.Rating(rating)) ->
@@ -138,75 +191,17 @@ fn handle_json_message(
       }
     }
     Ok(message.RatingType("get_ratings")) -> {
-      case
-        json.decode_bits(from: json, using: dynamic.list(of: dynamic.string))
-      {
-        Ok(_ratings) -> {
-          case rating.get_ratings(state.conn) {
-            Ok(ratings) -> {
-              let assert Ok(_) =
-                object([
-                  #("message_type", string("get_ratings")),
-                  #(
-                    "ratings",
-                    object(
-                      ratings
-                      |> list.fold(
-                        dict.new(),
-                        fn(d, ratings) {
-                          let v =
-                            ratings
-                            |> pair.map_second(fn(v) { int(v) })
+      // let decode_message =
+      // json.decode_bits(from: json, using: dynamic.list(of: dynamic.string))
 
-                          d
-                          |> dict.insert(v.0, v.1)
-                        },
-                      )
-                      // |> dict.map_values(fn(_k, v) { int(v) })
-                      // |> dict.fold(
-                      //   d,
-                      //   fn(d, key, v) {
-                      //     d
-                      //     |> dict.insert(key, v)
-                      //   },
-                      // )
-                      |> dict.to_list(),
-                    ),
-                  ),
-                ])
-                |> send()
-            }
+      let assert Ok(ratings) = rating.get_ratings_for_user(state.conn, 1)
 
-            // json.decode_bits(
-            //   from: json,
-            //   using: dynamic.list(dynamic.decode2(
-            //     rating.ImageRating,
-            //     dynamic.field("image", of: dynamic.string),
-            //     dynamic.field("rating", of: dynamic.int),
-            //   )),
-            // )
-            Error(error.NoResult) -> {
-              let assert Ok(_) =
-                object([
-                  #("message_type", string("get_ratings")),
-                  #("rating", null()),
-                ])
-                |> send()
-            }
-          }
-        }
-
-        Error(err) -> {
-          io.println("Error here")
-          io.debug(err)
-          let assert Ok(_) =
-            object([
-              #("message_type", string("get_ratings")),
-              #("ratings", nullable(None, of: int)),
-            ])
-            |> send()
-        }
-      }
+      ratings
+      |> object([
+        #("message_type", string("get_ratings")),
+        #("ratings", json.array(dynamic.dynamic(ratings), rating.ImageRating)),
+      ])
+      |> send()
     }
 
     Error(error) -> {

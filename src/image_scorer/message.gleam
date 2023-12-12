@@ -1,4 +1,5 @@
 import gleam/json
+import image_scorer/preference
 import gleam/dynamic
 
 pub type Rating {
@@ -7,9 +8,14 @@ pub type Rating {
   Image(image: String)
 }
 
+pub type Prefer {
+  Prefer(user_hash: String, image: preference.Image, others: List(preference.Image))
+}
+
 pub type Message {
   Broadcast(String)
   RatingType(String)
+  PreferenceType(String)
 }
 
 pub fn decode_type(json: BitArray) -> Result(Message, json.DecodeError) {

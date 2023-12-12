@@ -35,6 +35,10 @@ imageEles.forEach((imageEle) => {
   });
 });
 
+function getImages() {
+  return imagesList.slice(imageIdx, imageIdx + showImageCount);
+}
+
 function others(list, id, item) {
   const others = [];
   for (let i = id; i < id + showImageCount; i++) {
@@ -59,7 +63,7 @@ async function increment() {
     if (imageIdx >= imagesList.length - 1) {
       // imagesList = [];
     }
-    // getScores(imagesList, imageIdx);
+    getScores(imagesList, imageIdx);
     clearPrediction();
     getAestheticScores(imagesList, imageIdx).then((scores) => {
       scores.forEach(async (score, i) => {
@@ -96,7 +100,7 @@ async function decrement() {
       if (imageIdx == -1) {
         imageIdx = imagesList.length - 1;
       }
-      getScores(imagesList[imageIdx]);
+      getScores(imagesList, imageIdx);
       clearPrediction();
       getAestheticScores(imagesList, imageIdx).then((scores) => {
         scores.forEach((score, i) => {
@@ -195,4 +199,43 @@ async function getAestheticScore(image) {
       return resp.json();
     })
     .then(({ aesthetic_score }) => aesthetic_score);
+}
+
+async function hashFile(file) {
+  let data = await fetch(file).then((res) => {
+    if (!res.ok) {
+      throw new Error("Invalid file " + file);
+    }
+    return res.blob();
+  });
+
+  // const encoder = new TextEncoder();
+  // const data = encoder.encode(message);
+  const hash = await crypto.subtle.digest("SHA-1", await data.arrayBuffer());
+  return hash;
+}
+
+async function getScores() {
+  if (!connected()) {
+    return;
+  }
+
+  ws().send(
+    encode({
+      messageType: "get_ratings",
+      images: Promise.all(getImages().map(hashFile)),
+    }),
+  );
+
+  const listener = async (event) => {
+    const { messageType, rating } = await decode(event.data);
+    ws.removeEventListener("message", listener);
+  };
+
+  ws().addEventListener("message", listener);
+
+  // Make sure we remove the listener if anything fails
+  setTimeout(() => {
+    ws.removeEventListener("message", listener);
+  }, 5000);
 }

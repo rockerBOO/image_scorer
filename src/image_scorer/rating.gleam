@@ -1,41 +1,32 @@
-import gleam/dynamic
+import gleam/dynamic.{decode2, field, int, list, string}
 import gleam/json
 import sqlight
-import gleam/dict
-import gleam/pair
-import gleam/list
 import gleam/result
 import image_scorer/error
 import image_scorer/message
+import image_scorer/db
+import image_scorer/image
 
 pub type ImageRating {
-  ImageRating(image: String, rating: Int)
+  ImageRating(id: Int, user_id: Int, hash: String, rating: Int, created: String)
+  New(hash: String, user_id: Int, rating: Int)
   Rating(Int)
   Image(String)
+  UserRating(image_id: Int, rating: Int)
 }
 
-pub fn save(
-  conn: sqlight.Connection,
-  image_rating: ImageRating,
-) -> Result(ImageRating, error.Error) {
-  let sql = "insert into image_scores (image, score) values (?, ?);"
-  let insert_id = dynamic.int
-  let assert ImageRating(image, rating) = image_rating
-  case
-    sqlight.query(
-      sql,
-      on: conn,
-      with: [sqlight.text(image), sqlight.int(rating)],
-      expecting: insert_id,
-    )
-  {
-    Ok(_v) ->
-      case sqlight.exec(sql, conn) {
-        Ok(_) -> Ok(ImageRating(image, rating))
-        Error(err) -> Error(error.SqlError(err))
-      }
-    Error(err) -> Error(error.SqlError(err))
-  }
+pub fn save(conn: sqlight.Connection, image_rating: ImageRating) {
+  let assert Ok(Image(image)) = image.get_by_hash(image_rating.hash)
+  sqlight.query(
+    "insert into image_scores (image_id, user_id, score, created) values (?, ?, now());",
+    on: conn,
+    with: [
+      sqlight.int(image_rating.hash),
+      sqlight.int(image_rating.user_id),
+      sqlight.int(image_rating.rating),
+    ],
+    expecting: dynamic.int,
+  )
 }
 
 pub fn process(
@@ -46,42 +37,54 @@ pub fn process(
   case parse(json) {
     Ok(message.ImageRating(image, rating)) ->
       save(conn, ImageRating(image, rating))
-    Ok(message.Image(image)) -> get(conn, image)
     Error(err) -> Error(error.JsonError(err))
   }
 }
 
-pub fn get(
+pub fn get_score(
   conn: sqlight.Connection,
   image: String,
-) -> Result(ImageRating, error.Error) {
+) -> Result(Int, error.Error) {
   sqlight.query(
-    "select score, 0 from image_scores where image = ?",
+    "select score from image_scores where image = ?",
     conn,
     [sqlight.text(image)],
-    expecting: dynamic.tuple2(dynamic.int, dynamic.int),
+    expecting: dynamic.field("score", dynamic.int),
   )
-  |> result.map_error(fn(e) { error.SqlError(e) })
-  |> result.map(fn(v) {
-    Rating(
-      v
-      |> list.last
-      |> result.unwrap(#(-1, -1))
-      |> pair.first(),
-    )
-  })
+  |> db.single_int()
 }
 
-pub fn get_ratings(
+pub fn get_ratings_for_user(
   conn: sqlight.Connection,
-) -> Result(List(#(String, Int)), error.Error) {
-  sqlight.query(
-    "select image, score  from image_scores",
-    conn,
-    [],
-    expecting: dynamic.tuple2(dynamic.string, dynamic.int),
-  )
-  |> result.map_error(fn(e) { error.SqlError(e) })
+  user_id: Int,
+) -> Result(List(ImageRating), error.Error) {
+  let assert Ok(user_ratings) =
+    sqlight.query(
+      "select image_id, score from image_scores where user_id = ?",
+      conn,
+      [sqlight.int(user_id)],
+      expecting: dynamic.decode3(
+        UserRating,
+        dynamic.field("image_id", int),
+        dynamic.field("score", int),
+      ),
+    )
+    |> result.map(fn(res) {
+      res
+      |> list.map(fn(user_rating) {
+        sqlight.query(
+          "select hash from images where id = ?",
+          conn,
+          [sqlight.int(user_rating.image_id)],
+          expecting: dynamic.decode1(Image, dynamic.field("id", int)),
+        )
+        |> list.fold(
+          res,
+          fn(b, a) { ImageRating(b.image_id, a.hash, b.rating) },
+        )
+      })
+    })
+  // let assert Ok(image) = |> result.map_error(fn(e) { error.SqlError(e) })
 }
 
 pub fn decode_image_rating(
@@ -102,10 +105,10 @@ pub fn decode_images(
 ) -> Result(List(ImageRating), json.DecodeError) {
   json.decode_bits(
     from: json,
-    using: dynamic.list(dynamic.decode2(
+    using: list(decode2(
       ImageRating,
-      dynamic.field("image", of: dynamic.string),
-      dynamic.field("rating", of: dynamic.int),
+      field("image", of: string),
+      field("rating", of: int),
     )),
   )
 }
