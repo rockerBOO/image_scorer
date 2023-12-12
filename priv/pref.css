@@ -7,7 +7,13 @@ main {
   height: 100%;
   display: grid;
   place-items: center;
+  grid-template-areas: "box";
 }
+#images > div > *,
+#images > div::before {
+	grid-area: box;
+}
+
 img {
   object-fit: contain;
   max-width: 100%;
@@ -41,4 +47,11 @@ footer {
 
 .note {
   opacity: 0.5;
+}
+
+.prediction {
+	background-color: hsl(180, 100%, 2.5%, 0.5);
+	padding: 0.5em;
+	border-top-left-radius: 0.5em;
+	place-self: end;
 }

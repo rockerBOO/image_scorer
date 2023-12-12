@@ -13,6 +13,12 @@ const imageEles = [...Array(showImageCount).keys()].map(() => {
   const img = document.createElement("img");
   div.appendChild(img);
 
+  const prediction = document.createElement("div");
+  prediction.classList.add("prediction");
+  prediction.textContent = "7.8";
+
+  div.appendChild(prediction);
+
   imagesElem.appendChild(div);
   return img;
 });
@@ -54,43 +60,56 @@ async function increment() {
       // imagesList = [];
     }
     // getScores(imagesList, imageIdx);
-    // clearPrediction();
-    // getAestheticScores(imagesList, imageIdx).then((score) => {
-    //   const predictedEle = document.querySelector("#predicted");
-    //   predictedEle.classList.remove("predicting");
-    //   predictedEle.classList.add("predicted");
-    //   predictedEle.textContent = score.toPrecision(2);
-    // });
+    clearPrediction();
+    getAestheticScores(imagesList, imageIdx).then((scores) => {
+      scores.forEach(async (score, i) => {
+        const predictionEle = getBlockElement(i).querySelector(".prediction");
+        predictionEle.classList.remove("predicting");
+        predictionEle.classList.add("predicted");
+        predictionEle.textContent = score.toPrecision(2);
+      });
+    });
     resolve();
   }).then(imageLoad);
 }
 
-// function clearPrediction() {
-//   const predictedEle = document.querySelector("#predicted");
-//   predictedEle.textContent = "-";
-//   predictedEle.classList.remove("predicted");
-//   predictedEle.classList.add("predicting");
-// }
-//
-// async function decrement() {
-//   return new Promise((resolve, _reject) => {
-//     setTimeout(() => {
-//       imageIdx -= 1;
-//       if (imageIdx == -1) {
-//         imageIdx = imagesList.length - 1;
-//       }
-//       getScore(imagesList[imageIdx]);
-//       clearPrediction();
-//       getAestheticScore(imagesList[imageIdx]).then((score) => {
-//         const predictedEle = document.querySelector("#predicted");
-//         predictedEle.classList.remove("predicting");
-//         predictedEle.classList.add("predicted");
-//         predictedEle.textContent = score.toPrecision(2);
-//       });
-//       resolve();
-//     }, 500);
-//   }).then(imageLoad);
-// }
+function clearPrediction() {
+  const predictionEles = document.querySelectorAll(".prediction");
+
+  predictionEles.forEach((predictedEle) => {
+    predictedEle.textContent = "-";
+    predictedEle.classList.remove("predicted");
+    predictedEle.classList.add("predicting");
+  });
+}
+
+function getBlockElement(idx) {
+  return Object.entries(document.querySelector("#images").children).find(
+    (_, i) => i == idx,
+  )[1];
+}
+
+async function decrement() {
+  return new Promise((resolve, _reject) => {
+    setTimeout(() => {
+      imageIdx -= showImageCount;
+      if (imageIdx == -1) {
+        imageIdx = imagesList.length - 1;
+      }
+      getScores(imagesList[imageIdx]);
+      clearPrediction();
+      getAestheticScores(imagesList, imageIdx).then((scores) => {
+        scores.forEach((score, i) => {
+          const predictionEle = getBlockElement(i).querySelector(".prediction");
+          predictionEle.classList.remove("predicting");
+          predictionEle.classList.add("predicted");
+          predictionEle.textContent = score.toPrecision(2);
+        });
+      });
+      resolve();
+    }, 500);
+  }).then(imageLoad);
+}
 
 const loadingAnimation = () => {
   if (imageLoadTimeout) {
@@ -119,6 +138,7 @@ let imageLoadTimeout;
 
 async function imageLoad() {
   return new Promise((resolve) => {
+    loadingAnimation();
     imageEles.forEach((imageEle, i) => {
       imageEle.src = imagesList[imageIdx + i];
       imageEle.dataset.id = imageIdx + i;
@@ -152,6 +172,14 @@ fetch("/static/images.json")
   .catch((err) => {
     console.error(err);
   });
+
+async function getAestheticScores(list, id) {
+  return Promise.all(
+    [...Array(showImageCount)].map((_, i) => {
+      return getAestheticScore(list[id + i]);
+    }),
+  );
+}
 
 async function getAestheticScore(image) {
   return fetch(
