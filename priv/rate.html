@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <link rel="stylesheet" href="/static/main.css" />
+    <link rel="stylesheet" href="/static/rate.css" />
+  </head>
+  <body>
+    <main>
+      <form id="rate">
+        <div class="image">
+          <img id="image" src="/static/images.png" />
+        </div>
+        <section class="rating">
+          <div class="rating-interaction">
+            <div class="back">
+              <input id="back" type="button" value="Back" loading="lazy" />
+            </div>
+            <div class="interaction">
+              <div class="down">
+                <input type="submit" value="--" />
+                <input type="submit" value="-" />
+              </div>
+              <div class="rating-score">
+                <div id="predicted"></div>
+                <div class="note">predicted</div>
+              </div>
+              <div class="up">
+                <input type="submit" value="+" />
+                <input type="submit" value="++" />
+              </div>
+            </div>
+            <div class="skip">
+              <input id="skip" type="button" value="Skip" />
+            </div>
+          </div>
+          <div class="note">Rate the image</div>
+        </section>
+      </form>
+    </main>
+    <div id="score-container" class="score"><div id="score-value"></div></div>
+    <script type="module" src="/static/rate.js"></script>
+  </body>
+</html>

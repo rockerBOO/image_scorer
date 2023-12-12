@@ -20,3 +20,9 @@ gleam add image_scorer
 ```
 
 and its documentation can be found at <https://hexdocs.pm/image_scorer>.
+
+
+- Save each latents and CLIP image embeddings for the images
+- Compare the aesthetic predictor score with images shown
+
+

@@ -1,0 +1,82 @@
+input[type="button"],
+input[type="submit"] {
+  padding: 0.5em;
+  background-color: #062d24;
+  color: white;
+  border: 2px solid #005e3f;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+input[type="button"]:hover,
+input[type="button"]:focus,
+input[type="submit"]:hover,
+input[type="submit"]:focus {
+  outline: 5px solid #bfbc00;
+}
+
+.image {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.predicting {
+  opacity: 0.3;
+}
+
+.predicted {
+  animation:
+    0.75s fade-in ease-in-out,
+    1.5s scale-in ease-in-out;
+}
+
+#rate {
+  display: grid;
+  justify-items: center;
+  grid-template-rows: 3fr 1fr;
+}
+
+.rate {
+  display: grid;
+}
+
+section.rating {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  justify-items: center;
+}
+
+.rating-interaction {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  justify-items: center;
+}
+
+.rating .note {
+  display: grid;
+  align-items: center;
+  opacity: 0.5;
+}
+
+.back,
+.skip {
+  display: grid;
+  align-items: center;
+}
+
+.interaction {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+}
+
+.rating-score {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+}
+
+#predicted {
+  font-size: 2em;
+}

@@ -1,4 +1,4 @@
-import { connected, debounce, shuffle } from "./main.js";
+import { ws, encode, decode, connected, debounce, shuffle } from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -21,7 +21,6 @@ async function placeScore(image, score) {
   return setScoreValue(score);
 }
 
-
 async function getScore(image) {
   if (!connected()) {
     return;
@@ -30,14 +29,14 @@ async function getScore(image) {
 
   const listener = async (event) => {
     const { messageType, rating } = await decode(event.data);
-    ws.removeEventListener("message", listener);
+    ws().removeEventListener("message", listener);
   };
 
   ws().addEventListener("message", listener);
 
   // Make sure we remove the listener if anything fails
   setTimeout(() => {
-    ws.removeEventListener("message", listener);
+    ws().removeEventListener("message", listener);
   }, 5000);
 }
 
@@ -49,8 +48,22 @@ async function increment() {
       imagesList = 0;
     }
     getScore(imagesList[imageIdx]);
+    clearPrediction();
+    getAestheticScore(imagesList[imageIdx]).then((score) => {
+      const predictedEle = document.querySelector("#predicted");
+      predictedEle.classList.remove("predicting");
+      predictedEle.classList.add("predicted");
+      predictedEle.textContent = score.toPrecision(2);
+    });
     resolve();
   }).then(imageLoad);
+}
+
+function clearPrediction() {
+  const predictedEle = document.querySelector("#predicted");
+  predictedEle.textContent = "-";
+  predictedEle.classList.remove("predicted");
+  predictedEle.classList.add("predicting");
 }
 
 async function decrement() {
@@ -61,6 +74,13 @@ async function decrement() {
         imageIdx = imagesList.length - 1;
       }
       getScore(imagesList[imageIdx]);
+      clearPrediction();
+      getAestheticScore(imagesList[imageIdx]).then((score) => {
+        const predictedEle = document.querySelector("#predicted");
+        predictedEle.classList.remove("predicting");
+        predictedEle.classList.add("predicted");
+        predictedEle.textContent = score.toPrecision(2);
+      });
       resolve();
     }, 500);
   }).then(imageLoad);
@@ -119,6 +139,22 @@ fetch("/static/images.json")
   .catch((err) => {
     console.error(err);
   });
+
+async function getAestheticScore(image) {
+  return fetch(
+    `http://localhost:3031/aesthetic_score?image_file=${encodeURI(
+      "/home/rockerboo/code/image_scorer/" + image,
+    )}`,
+  )
+    .then((resp) => {
+      if (!resp.ok) {
+        throw new Error("Could not load images.json");
+      }
+
+      return resp.json();
+    })
+    .then(({ aesthetic_score }) => aesthetic_score);
+}
 
 const skipEle = document.querySelector("#skip");
 const backEle = document.querySelector("#back");
@@ -183,21 +219,21 @@ window.addEventListener(
   }, 300),
 );
 
-const rating = document.querySelector("#rating");
-rating.addEventListener("submit", (e) => {
-  e.preventDefault();
+// const rating = document.querySelector("#rate");
+// rating.addEventListener("submit", (e) => {
+//   e.preventDefault();
+//
+//   // Limit double, and rapid scoring
+//   if (e.key in pressScoreList) {
+//     if (clickRated) {
+//       return;
+//     }
+//   }
+//   // console.log('submit rating', e.submitter.value);
+//   placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
+// });
 
-  // Limit double, and rapid scoring
-  if (e.key in pressScoreList) {
-    if (clickRated) {
-      return;
-    }
-  }
-  // console.log('submit rating', e.submitter.value);
-  placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
-});
-
-let scoreValueTimeout;
+let scoreValueTimeout = undefined;
 
 async function setScoreValue(score) {
   return new Promise((resolve, _reject) => {
