@@ -2,7 +2,7 @@ import gleeunit
 import gleeunit/should
 import sqlight
 import gleam/list
-import gleam/option.{Some, None}
+import gleam/option.{None, Some}
 import image_scorer/db
 import image_scorer/image_score
 

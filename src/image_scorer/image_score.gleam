@@ -3,7 +3,7 @@ import gleam/result
 import gleam/dynamic.{float, int, string}
 import gleam/list
 import gleam/io
-import gleam/option.{None, Some, type Option}
+import gleam/option.{type Option, None, Some}
 import gleam/int
 import gleam/float
 import image_scorer/db
@@ -61,7 +61,7 @@ pub fn get_image_score(conn, image_id) {
     |> list.length()
 
   case length {
-    0 -> Ok(0.)
+    0 -> Ok(0.0)
     l ->
       scores
       |> float.sum()

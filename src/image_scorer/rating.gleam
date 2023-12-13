@@ -10,10 +10,10 @@
 
 // pub type ImageRating {
 //   ImageRating(id: Int, user_id: Int, hash: String, rating: Int, created: String)
-  // New(hash: String, user_id: Int, rating: Int)
-  // Rating(Int)
-  // Image(String)
-  // UserRating(image_id: Int, rating: Int)
+// New(hash: String, user_id: Int, rating: Int)
+// Rating(Int)
+// Image(String)
+// UserRating(image_id: Int, rating: Int)
 // }
 //
 // pub fn new(conn, image_id: Int, user_id: Int, score: Int) {
@@ -39,8 +39,6 @@
 //   )
 // }
 
-
-
 // pub fn process(
 //   conn: sqlight.Connection,
 //   json: BitArray,
@@ -52,7 +50,6 @@
 //     Error(err) -> Error(error.JsonError(err))
 //   }
 // }
-
 
 // pub fn decode_image_rating(
 //   json: BitArray,

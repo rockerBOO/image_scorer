@@ -9,7 +9,6 @@ import image_scorer/message
 pub fn main() {
   gleeunit.main()
 }
-
 // pub fn save_test() {
 //   use conn <- sqlight.with_connection(":memory:")
 //

@@ -21,5 +21,6 @@ pub fn decode_type(json: BitArray) -> Result(Message, json.DecodeError) {
       RatingType,
       dynamic.field("messageType", dynamic.string),
     ),
-  ) |> io.debug()
+  )
+  |> io.debug()
 }

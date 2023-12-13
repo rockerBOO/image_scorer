@@ -16,10 +16,7 @@ pub fn get_by_hash(conn, hash, user_id) {
     "select image_id, other_id from images_preferences join images on (images.id = images_preferences.image_id) where images.hash = ? and images_preferences.user_id = ?",
     on: conn,
     with: [sqlight.text(hash), sqlight.int(user_id)],
-    expecting: dynamic.tuple2(
-      dynamic.int,
-      dynamic.int,
-    ),
+    expecting: dynamic.tuple2(dynamic.int, dynamic.int),
   )
 }
 

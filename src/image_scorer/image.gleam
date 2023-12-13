@@ -74,7 +74,11 @@ pub fn rollback(conn) {
   |> sqlight.exec(conn)
 }
 
-pub fn get_or_create_by_hash(conn, hash, user_id) -> Result(Option(Image), error.Error) {
+pub fn get_or_create_by_hash(
+  conn,
+  hash,
+  user_id,
+) -> Result(Option(Image), error.Error) {
   case
     conn
     |> get_by_hash(hash)
