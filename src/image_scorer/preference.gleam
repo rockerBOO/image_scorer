@@ -17,8 +17,8 @@ pub fn get_by_hash(conn, hash, user_id) {
     on: conn,
     with: [sqlight.text(hash), sqlight.int(user_id)],
     expecting: dynamic.tuple2(
-      dynamic.element(0, dynamic.int),
-      dynamic.element(1, dynamic.int),
+      dynamic.int,
+      dynamic.int,
     ),
   )
 }
