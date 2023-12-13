@@ -18,7 +18,7 @@ create table if not exists images_preferences
       foreign key(user_id) references users(id)
       foreign key(other_id) references images(id)
     );
-create unique index images_preferences_image_id_other_id_user_id on images_preferences (image_id, other_id, user_id);
+create unique index if not exists images_preferences_image_id_other_id_user_id on images_preferences (image_id, other_id, user_id);
 
 create table if not exists images 
     (
@@ -51,7 +51,7 @@ create table if not exists image_scores
       foreign key(user_id) references users(id)
       foreign key(image_id) references image(id)
     );
-create unique index image_scores_image_id_user_id on images_preferences (image_id, other_id);
+create unique index if not exists image_scores_image_id_user_id on images_preferences (image_id, other_id);
 "
   sqlight.exec(sql, conn)
 }

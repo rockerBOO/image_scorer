@@ -38,7 +38,7 @@ export async function decode(data) {
   return JSON.parse(await data.text());
 }
 
-function getFilename(file) {
+export function getFilename(file) {
   return file.split("/").pop();
 }
 

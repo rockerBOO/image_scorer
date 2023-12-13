@@ -140,7 +140,11 @@ fn process_new_score(conn, user_id, json) {
 }
 
 /// {messageType: "prefer", image_hash: "91jdoks", others: [{ image_hash: "" }]}
-fn process_new_preference(conn, user_id, json) -> Result(json.Json, error.Error) {
+fn process_new_preference(
+  conn,
+  user_id,
+  json_bits,
+) -> Result(json.Json, error.Error) {
   let decoder =
     dynamic.decode2(
       preference.NewFromHash,
@@ -149,12 +153,42 @@ fn process_new_preference(conn, user_id, json) -> Result(json.Json, error.Error)
     )
 
   let assert Ok(preference.NewFromHash(hash, others)) =
-    json.decode_bits(json, decoder)
+    json.decode_bits(json_bits, decoder)
 
-  let results = preference.save_by_hash(conn, hash, others, user_id)
-  todo
-  // add preferences
-  // image_score.new_from_hash(conn, hash, user_id, score)
+  let assert results =
+    preference.save_by_hash(conn, hash, others, user_id)
+    |> list.map(fn(res) {
+      res
+      |> result.map(fn(_v) {
+        object([#("ok", string("scores saved successfully"))])
+      })
+      |> result.map_error(fn(_v) {
+        object([#("ok", string("failed to save preference"))])
+      })
+    })
+    |> list.map(fn(res) {
+      res
+      |> result.unwrap_both()
+    })
+
+  Ok(object([
+    #("messageType", string("pick_preference")),
+    #("results", json.preprocessed_array(results)),
+  ]))
+  // case x {
+  //   Ok(v) ->
+  //     Ok(object([
+  //       #("messageType", string("pick_preference")),
+  //       #("ok", string("scores saved successfully")),
+  //     ]))
+  //   Error(e) -> {
+  //     io.debug(e)
+  //     Ok(object([
+  //       #("messageType", string("get_image_score")),
+  //       #("error", string("could not save the score")),
+  //     ]))
+  //   }
+  // }
 }
 
 fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
@@ -344,15 +378,13 @@ fn serve_image(
   _req: Request(Connection),
   path: List(String),
 ) -> Response(ResponseData) {
-  mist.send_file(
+  let filepath =
     list.append(["images"], path)
-    |> list.fold("", filepath.join),
-    offset: 0,
-    limit: None,
-  )
+    |> list.fold("", filepath.join)
+  mist.send_file(filepath, offset: 0, limit: None)
   |> result.map(fn(file) {
     response.new(200)
-    |> response.prepend_header("content-type", "text/html")
+    |> response.prepend_header("content-type", guess_content_type(filepath))
     |> response.set_body(file)
   })
   |> result.lazy_unwrap(fn() {

@@ -1,9 +1,8 @@
 import gleam/dynamic
-// import gleam/json
-import sqlight
 import gleam/option.{Some}
-// import gleam/pair
 import gleam/list
+import gleam/result
+import sqlight
 import image_scorer/image
 
 pub type Preference {
@@ -33,6 +32,11 @@ pub fn save(conn, image_id, other_id, user_id) {
       dynamic.element(3, dynamic.string),
     ),
   )
+  |> result.map(fn(v) {
+    v
+    |> list.first()
+    |> option.from_result()
+  })
 }
 
 pub fn save_by_hash(

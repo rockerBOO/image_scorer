@@ -24,6 +24,32 @@ pub fn save_by_hash_test() {
   |> should.be_false()
 }
 
+pub fn save_test() {
+  use conn <- sqlight.with_connection(":memory:")
+  let assert Ok(_) = db.create_tables(conn)
+
+  preference.save(conn, 1, 1, 1)
+  |> should.be_ok()
+
+  preference.save(conn, 1, 1, 1)
+  |> should.be_error()
+
+  preference.save(conn, 1, 2, 1)
+  |> should.be_ok()
+
+  preference.save(conn, 2, 2, 1)
+  |> should.be_ok()
+
+  preference.save(conn, 2, 2, 1)
+  |> should.be_error()
+
+  preference.save(conn, 2, 3, 1)
+  |> should.be_ok()
+
+  preference.save(conn, 2, 5, 1)
+  |> should.be_ok()
+}
+
 pub fn get_by_hash_test() {
   use conn <- sqlight.with_connection(":memory:")
   let assert Ok(_) = db.create_tables(conn)

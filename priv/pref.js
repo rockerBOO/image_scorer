@@ -1,4 +1,10 @@
-import { syncMessage, hashFile, shuffle, trySyncMessage } from "./main.js";
+import {
+  syncMessage,
+  getFilename,
+  hashFile,
+  shuffle,
+  trySyncMessage,
+} from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -29,7 +35,9 @@ imageEles.forEach((imageEle) => {
   imageEle.addEventListener("click", async (e) => {
     pickPreference(
       await hashFile(e.target.src),
-      await Promise.all(others(imagesList, imageIdx, e.target.dataset.id).map(hashFile)),
+      await Promise.all(
+        others(imagesList, imageIdx, e.target.dataset.id).map(hashFile),
+      ),
     );
     increment();
   });
@@ -54,7 +62,11 @@ async function pickPreference(image, others) {
   // picked
   console.log("picked", image);
   console.log("others", others);
-	return trySyncMessage({ messageType: "pick_preference", image_hash: image, others });
+  return trySyncMessage({
+    messageType: "pick_preference",
+    image_hash: image,
+    others,
+  });
 }
 
 async function increment() {
@@ -188,11 +200,24 @@ async function getAestheticScores(list, id) {
 }
 
 async function getAestheticScore(image) {
-  return fetch(
-    `http://localhost:3031/aesthetic_score?image_file=${encodeURI(
-      "/home/rockerboo/code/image_scorer/" + image,
-    )}`,
-  )
+  const imageBlob = await fetch(image).then((resp) => {
+    if (!resp.ok) {
+      throw new Error("Could not load images.json");
+    }
+
+    return resp.blob();
+  });
+  const file = new File([imageBlob], getFilename(image), {
+    type: "image/png",
+  });
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return fetch(`http://localhost:3031/aesthetic_score`, {
+    method: "POST",
+    body: formData,
+  })
     .then((resp) => {
       if (!resp.ok) {
         throw new Error("Could not load images.json");
