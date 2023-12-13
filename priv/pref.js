@@ -1,19 +1,9 @@
-import {
-  // ws,
-  syncMessage,
-	hashFile,
-  // encode,
-  // decode,
-  // connected,
-  // debounce,
-  shuffle,
-} from "./main.js";
+import { syncMessage, hashFile, shuffle, trySyncMessage } from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
 let showImageCount = 4;
 let clickRated;
-
 
 let imagesElem = document.querySelector("#images");
 
@@ -36,10 +26,10 @@ const imageEles = [...Array(showImageCount).keys()].map(() => {
 const scoreValueEle = document.querySelector("#score-value");
 
 imageEles.forEach((imageEle) => {
-  imageEle.addEventListener("click", (e) => {
+  imageEle.addEventListener("click", async (e) => {
     pickPreference(
-      e.target.src,
-      others(imagesList, imageIdx, e.target.dataset.id),
+      await hashFile(e.target.src),
+      await Promise.all(others(imagesList, imageIdx, e.target.dataset.id).map(hashFile)),
     );
     increment();
   });
@@ -60,10 +50,11 @@ function others(list, id, item) {
   return others;
 }
 
-function pickPreference(image, others) {
+async function pickPreference(image, others) {
   // picked
   console.log("picked", image);
   console.log("others", others);
+	return trySyncMessage({ messageType: "pick_preference", image_hash: image, others });
 }
 
 async function increment() {
@@ -211,7 +202,6 @@ async function getAestheticScore(image) {
     })
     .then(({ aesthetic_score }) => aesthetic_score);
 }
-
 
 async function getScores() {
   return syncMessage({

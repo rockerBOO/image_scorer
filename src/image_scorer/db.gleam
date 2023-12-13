@@ -6,11 +6,11 @@ import image_scorer/error
 
 pub fn create_tables(conn) {
   let sql =
-    "create table if not exists images_preferences (image_id INTEGER PRIMARY KEY, other_id int, user_id int, rating REAL, created DATETIME);
+    "create table if not exists images_preferences (image_id INTEGER PRIMARY KEY not null, other_id int not null, user_id int not null, rating REAL, created DATETIME);
 create table if not exists images (id INTEGER PRIMARY KEY, hash text, name text, created datetime);
-create table if not exists user_image (image_id int, user_id int, created datetime);
+create table if not exists user_image (image_id int not null, user_id int not null, created datetime);
 create table if not exists users (id INTEGER PRIMARY KEY, hash text, created datetime);
-create table if not exists image_scores (id INTEGER PRIMARY KEY, image_id int, user_id int, score real, created datetime);"
+create table if not exists image_scores (id INTEGER PRIMARY KEY, image_id int not null, user_id int not null, score real not null, created datetime);"
   sqlight.exec(sql, conn)
 }
 

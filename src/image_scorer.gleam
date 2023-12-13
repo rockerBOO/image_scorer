@@ -145,16 +145,13 @@ fn process_new_preference(conn, user_id, json) -> Result(json.Json, error.Error)
     dynamic.decode2(
       preference.NewFromHash,
       dynamic.field("image_hash", dynamic.string),
-      dynamic.field(
-        "others",
-        dynamic.list(dynamic.field("image_hash", dynamic.string)),
-      ),
+      dynamic.field("others", dynamic.list(dynamic.string)),
     )
 
   let assert Ok(preference.NewFromHash(hash, others)) =
     json.decode_bits(json, decoder)
 
-  let assert Ok(_) = preference.save_by_hash(conn, user_id, hash, others)
+  let results = preference.save_by_hash(conn, hash, others, user_id)
   todo
   // add preferences
   // image_score.new_from_hash(conn, hash, user_id, score)
@@ -269,7 +266,7 @@ fn handle_json_message(
       process_new_score(state.conn, state.user_id, json)
       |> handle_response(send)
 
-    Ok(message.RatingType("prefer")) ->
+    Ok(message.RatingType("pick_preference")) ->
       process_new_preference(state.conn, state.user_id, json)
       |> handle_response(send)
 

@@ -16,7 +16,7 @@ pub fn image_get_or_create_test() {
 
   let assert Ok(Some(_)) =
     conn
-    |> image.get_or_create("1234", 1)
+    |> image.get_or_create_by_hash("1234", 1)
 }
 
 pub fn create_test() {

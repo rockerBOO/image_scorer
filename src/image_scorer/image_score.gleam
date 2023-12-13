@@ -29,7 +29,7 @@ pub fn create(conn, image_id: Int, user_id: Int, score: Float) {
 
 pub fn create_from_hash(conn, hash: String, user_id: Int, score: Float) {
   let assert Ok(Some(image.Image(id, _hash, _name, _created))) =
-    image.get_or_create(conn, hash, user_id)
+    image.get_or_create_by_hash(conn, hash, user_id)
 
   sqlight.query(
     "insert into image_scores (image_id, user_id, score, created) values (?, ?, ?, DateTime('now'))",
