@@ -2,33 +2,31 @@ import mist.{type Connection, type ResponseData}
 import gleam/erlang/process
 import gleam/bytes_builder
 import gleam/bit_array
+import gleam/dynamic
 import gleam/otp/actor
 import gleam/option.{None, Some}
 import gleam/iterator
 import gleam/result
-import gleam/pair
-import gleam/dynamic
 import gleam/string
-import gleam/dict
 import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{array, int, null, nullable, object, string}
+import gleam/json.{array, float, int, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
 import sqlight
 import gleam/erlang
-import image_scorer/rating
-import image_scorer/preference
 import image_scorer/message
-import image_scorer/user
 import image_scorer/db
 import image_scorer/error
+import image_scorer/image_score
+import image_scorer/preference
+import image_scorer/image
 
 pub type Socket {
-  State(conn: sqlight.Connection)
+  State(conn: sqlight.Connection, user_id: Int)
 }
 
 pub fn main() {
@@ -48,7 +46,9 @@ pub fn main() {
         ["ws"] ->
           mist.websocket(
             request: req,
-            on_init: fn(_conn) { #(State(conn: conn), Some(selector)) },
+            on_init: fn(_conn) {
+              #(State(conn: conn, user_id: 1), Some(selector))
+            },
             on_close: fn(_state) { io.println("goodbye!") },
             handler: handle_ws_message,
           )
@@ -105,105 +105,193 @@ fn serve_api(
   |> response.set_header("content-type", "text/plain")
 }
 
+/// {messageType: "rate", image_hash: "91jdoks", score: 1}
+fn process_new_score(conn, user_id, json) {
+  let new_rating_decoder =
+    dynamic.decode2(
+      image_score.NewFromHash,
+      dynamic.field("image_hash", dynamic.string),
+      dynamic.field("score", dynamic.float),
+    )
+
+  let assert Ok(image_score.NewFromHash(hash, score)) =
+    json.decode_bits(json, new_rating_decoder)
+
+  // io.debug(hash)
+  // io.debug(user_id)
+  // io.debug(score)
+
+  let assert Ok(_) = image_score.create_from_hash(conn, hash, user_id, score)
+
+  case image_score.get_image_score_by_hash(conn, hash) {
+    Ok(Some(score)) ->
+      Ok(object([
+        #("messageType", string("get_image_score")),
+        #("ok", float(score)),
+      ]))
+    Error(e) -> {
+      io.debug(e)
+      Ok(object([
+        #("messageType", string("get_image_score")),
+        #("error", string("Could not make the result")),
+      ]))
+    }
+  }
+}
+
+/// {messageType: "prefer", image_hash: "91jdoks", others: [{ image_hash: "" }]}
+fn process_new_preference(conn, user_id, json) -> Result(json.Json, error.Error) {
+  let decoder =
+    dynamic.decode2(
+      preference.NewFromHash,
+      dynamic.field("image_hash", dynamic.string),
+      dynamic.field(
+        "others",
+        dynamic.list(dynamic.field("image_hash", dynamic.string)),
+      ),
+    )
+
+  let assert Ok(preference.NewFromHash(hash, others)) =
+    json.decode_bits(json, decoder)
+
+  let assert Ok(_) = preference.save_by_hash(conn, user_id, hash, others)
+  todo
+  // add preferences
+  // image_score.new_from_hash(conn, hash, user_id, score)
+}
+
+fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
+  let assert Ok(hash) =
+    json
+    |> json.decode_bits(dynamic.field("image_hash", dynamic.string))
+
+  let assert Ok(image) = image.get_by_hash(conn, hash)
+
+  let result = case image {
+    Some(image.Image(id, _hash, _name, _created)) ->
+      case image_score.get_image_score(conn, id) {
+        Ok(0.0) -> None
+        Ok(v) -> Some(v)
+        Error(e) -> {
+          io.debug(e)
+          None
+        }
+      }
+    None -> None
+  }
+
+  case result {
+    Some(score) ->
+      Ok(object([
+        #("messageType", string("get_image_score")),
+        #("score", float(score)),
+      ]))
+    None ->
+      Ok(object([
+        #("messageType", string("get_image_score")),
+        #("error", string("No image score found")),
+      ]))
+  }
+}
+
+// { messageType: "get_image_scores", image_hashes: ["91839d93"] }
+fn process_get_images_score(conn, json) -> Result(json.Json, error.Error) {
+  let decoder = dynamic.field("image_hashes", dynamic.list(dynamic.string))
+
+  let assert Ok(hashes) = json.decode_bits(json, decoder)
+
+  let image_scores =
+    hashes
+    |> list.map(fn(hash) {
+      image_score.get_image_score_by_hash(conn, hash)
+      |> result.unwrap(None)
+    })
+  Ok(object([
+    #("messageType", string("get_image_scores")),
+    #(
+      "scores",
+      array(
+        image_scores
+        |> list.filter(option.is_some)
+        |> list.map(fn(v) {
+          v
+          |> option.unwrap(-1.0)
+        }),
+        float,
+      ),
+    ),
+  ]))
+}
+
+fn process_get_image_scores_for_user(
+  conn,
+  user_id,
+  json,
+) -> Result(json.Json, error.Error) {
+  todo
+}
+
+fn handle_error(
+  err: Result(_, error.Error),
+  send: fn(json.Json) -> Result(_, error.Error),
+) -> Result(_, Nil) {
+  err
+  |> result.map_error(fn(err) {
+    io.debug(err)
+    let assert Ok(_) =
+      object([
+        #("message_type", string("prefer")),
+        #("error", string("could not process")),
+      ])
+      |> send()
+    err
+  })
+  |> result.nil_error()
+}
+
+fn handle_response(resp, send: fn(json.Json) -> Result(_, error.Error)) {
+  resp
+  |> result.then(fn(json) {
+    let assert Ok(_) =
+      json
+      |> send()
+  })
+  |> handle_error(send)
+}
+
 fn handle_json_message(
   state: Socket,
   send: fn(json.Json) -> Result(_, error.Error),
   json: BitArray,
 ) {
   case message.decode_type(json) {
-    Ok(message.RatingType("rate")) -> {
-      case rating.process(state.conn, json, rating.decode_image_rating) {
-        Ok(rating.ImageRating(image, _rating)) -> {
-          let assert Ok(_) = send(object([#("image", string(image))]))
-        }
-        Error(error) -> {
-          io.debug(error)
-          let assert Ok(_) =
-            send(object([
-              #("message_type", string("get_rating")),
-              #("error", string("Could not rate the image")),
-            ]))
-        }
-      }
-    }
-    Ok(message.PreferenceType("prefer")) -> {
-      let decode_image =
-        dynamic.decode2(
-          preference.Image,
-          dynamic.field("file", dynamic.string),
-          dynamic.field("hash", dynamic.string),
-        )
-      case
-        json.decode_bits(
-          from: json,
-          using: dynamic.decode3(
-            message.Prefer,
-            dynamic.field("user", dynamic.field("hash", dynamic.string)),
-            dynamic.field("image", decode_image),
-            dynamic.field("others", dynamic.list(decode_image)),
-          ),
-        )
-      {
-        Ok(message.Prefer(user_hash, image, others)) -> {
-          case preference.set_preference(state.conn, user_hash, image, others) {
-            Ok(v) -> {
-              io.debug(v)
-              object([
-                #("message_type", string("prefer")),
-                #("error", string("got your preference save")),
-              ])
-              |> send()
-            }
-            Error(error) -> {
-              io.debug(error)
+    Ok(message.RatingType("place_score")) ->
+      process_new_score(state.conn, state.user_id, json)
+      |> handle_response(send)
 
-              io.debug(error)
-              object([
-                #("message_type", string("prefer")),
-                #("error", string("could not process")),
-              ])
-              |> send()
-            }
-          }
-        }
-        Error(error) -> {
-          io.debug(error)
-          object([
-            #("message_type", string("prefer")),
-            #("error", string("could not process")),
-          ])
-          |> send()
-        }
-      }
-    }
+    Ok(message.RatingType("prefer")) ->
+      process_new_preference(state.conn, state.user_id, json)
+      |> handle_response(send)
 
-    Ok(message.RatingType("get_rating")) -> {
-      case rating.process(state.conn, json, rating.decode_image) {
-        Ok(rating.Rating(rating)) ->
-          object([
-            #("message_type", string("get_rating")),
-            #("rating", int(rating)),
-          ])
-          |> send()
-        Error(error.NoResult) ->
-          object([#("message_type", string("get_rating")), #("rating", null())])
-          |> send()
-      }
-    }
-    Ok(message.RatingType("get_ratings")) -> {
-      // let decode_message =
-      // json.decode_bits(from: json, using: dynamic.list(of: dynamic.string))
+    Ok(message.RatingType("get_images_score")) ->
+      process_get_images_score(state.conn, json)
+      |> handle_response(send)
 
-      let assert Ok(ratings) = rating.get_ratings_for_user(state.conn, 1)
+    Ok(message.RatingType("get_image_score")) ->
+      process_get_image_score(state.conn, json)
+      |> handle_response(send)
 
-      ratings
-      |> object([
-        #("message_type", string("get_ratings")),
-        #("ratings", json.array(dynamic.dynamic(ratings), rating.ImageRating)),
-      ])
-      |> send()
-    }
-
+    // Ok(message.RatingType("get_score")) ->
+    //   process_new_preference(state.conn, json)
+    //   |> handle_response(send)
+    //
+    // Ok(message.RatingType("get_image_scores")) ->
+    //   process_new_preference(state.conn, json)
+    //   |> handle_response(send)
+    //
+    // Ok(message.RatingType("get_image_scores_for_user")) ->
+    //   process_new_preference(state.conn, state.user_id, json)
+    //   |> handle_response(send)
     Error(error) -> {
       io.debug(error)
       let assert Ok(_) =
@@ -211,6 +299,7 @@ fn handle_json_message(
           #("message_type", string("get_rating")),
           #("error", string("invalid")),
         ]))
+      Error(Nil)
     }
   }
 }
@@ -232,15 +321,6 @@ fn handle_ws_message(state: Socket, conn, message) {
       let assert Ok(_) = send(object([#("message_type", string("pong"))]))
       actor.continue(state)
     }
-    mist.Binary(json) -> {
-      let assert Ok(_) = handle_json_message(state, send, json)
-      actor.continue(state)
-    }
-    mist.Text(_) | mist.Binary(_) -> {
-      let assert Ok(_) =
-        send(object([#("message_type", string("text AND binary?"))]))
-      actor.continue(state)
-    }
     mist.Custom(message.Broadcast(text)) -> {
       let assert Ok(_) =
         send(object([
@@ -250,6 +330,16 @@ fn handle_ws_message(state: Socket, conn, message) {
       actor.continue(state)
     }
     mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)
+
+    mist.Binary(json) -> {
+      let assert Ok(_) = handle_json_message(state, send, json)
+      actor.continue(state)
+    }
+    mist.Text(_) | mist.Binary(_) -> {
+      let assert Ok(_) =
+        send(object([#("message_type", string("text AND binary?"))]))
+      actor.continue(state)
+    }
   }
 }
 

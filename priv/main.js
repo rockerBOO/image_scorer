@@ -1,3 +1,5 @@
+const imageHashes = new Map();
+
 export function debounce(callback, delay) {
   let timeout;
   return function () {
@@ -36,6 +38,60 @@ export async function decode(data) {
   return JSON.parse(await data.text());
 }
 
+function getFilename(file) {
+  return file.split("/").pop();
+}
+
+export async function hashFile(file) {
+  const filename = getFilename(file);
+  if (imageHashes.has(filename)) {
+    return imageHashes.get(filename);
+  }
+
+  let data = await fetch(file).then((res) => {
+    if (!res.ok) {
+      throw new Error("Invalid file " + file);
+    }
+    return res.blob();
+  });
+
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-1",
+    await data.arrayBuffer(),
+  );
+  const hash = uint8ToHex(Array.from(new Uint8Array(hashBuffer)));
+
+  imageHashes.set(getFilename(file), hash);
+  return hash;
+}
+
+function uint8ToHex(uint8array) {
+  return uint8array.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function syncMessage(message, timeout = 5000) {
+  if (!connected()) {
+    return;
+  }
+
+  return new Promise((resolve) => {
+    console.log("Sending...", message);
+    ws().send(encode(message));
+
+    const listener = async (event) => {
+      resolve(await decode(event.data));
+      ws().removeEventListener("message", listener);
+    };
+
+    ws().addEventListener("message", listener);
+
+    // Make sure we remove the listener if anything fails
+    setTimeout(() => {
+      ws().removeEventListener("message", listener);
+    }, timeout);
+  });
+}
+
 // WebSocket
 //
 let websocket;
@@ -47,6 +103,30 @@ export function connected() {
   return websocket && websocket.readyState == 1;
 }
 
+export async function trySyncMessage(message, timeout = 5000) {
+  if (connected()) {
+    return syncMessage(message);
+  }
+
+	console.log("not connected!")
+
+  return new Promise(async (resolve, reject) => {
+    // reject if we wait too long
+    const timeoutHandle = setTimeout(() => {
+      reject();
+    }, timeout);
+
+    console.log("Trying to connect...");
+    // await connect();
+
+    // Clear rejection
+    clearTimeout(timeoutHandle);
+
+    // send message
+    resolve(syncMessage(message));
+  });
+}
+
 export async function send(v) {
   return websocket.send(v);
 }
@@ -55,13 +135,15 @@ export function ws() {
   return websocket;
 }
 
-async function connect() {
+function connect() {
+  console.log("connecting..");
+
   return new Promise((resolve) => {
     websocket = new WebSocket("ws://localhost:3030/ws");
 
     websocket.addEventListener("open", () => {
       websocket.send("Hello Server!");
-      resolve(ws);
+      resolve(websocket);
     });
 
     // ws.addEventListener("message", async (event) => {
@@ -89,5 +171,5 @@ async function connect() {
     };
   });
 }
-console.log("connecting..");
-connect();
+
+await connect();

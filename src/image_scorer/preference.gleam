@@ -6,10 +6,11 @@ import gleam/list
 import gleam/result
 import image_scorer/error
 import image_scorer/db
-import image_scorer/user
 
-// import image_scorer/error
-// import image_scorer/message
+
+pub type Preference {
+  NewFromHash(hash: String, others: List(String))
+}
 
 pub fn get_user_id_from_hash(conn, hash) {
   sqlight.query(
@@ -19,14 +20,6 @@ pub fn get_user_id_from_hash(conn, hash) {
     expecting: dynamic.int,
   )
   |> db.single_int()
-}
-
-pub type Image {
-  Image(file: String, hash: String)
-}
-
-pub type Preference {
-  Preference(image: Image, others: List(Image))
 }
 
 pub fn get_image_id_from_hash(conn, hash) -> Result(Int, error.Error) {
@@ -39,19 +32,20 @@ pub fn get_image_id_from_hash(conn, hash) -> Result(Int, error.Error) {
   |> db.single_int()
 }
 
-pub fn set_preference(conn, user_hash: String, image: Image, others: List(Image)) {
+pub fn save_by_hash(
+  conn,
+  user_id: Int,
+  image_hash: String,
+  others: List(String),
+) {
   let assert Ok(image_id) =
     conn
-    |> get_image_id_from_hash(image.hash)
-
-  let assert Ok(user_id) =
-    conn
-    |> get_user_id_from_hash(user_hash)
+    |> get_image_id_from_hash(image_hash)
 
   others
-  |> list.map(fn(other) {
+  |> list.map(fn(other_hash) {
     conn
-    |> get_image_id_from_hash(other.hash)
+    |> get_image_id_from_hash(other_hash)
   })
   |> list.map(fn(id) {
     id

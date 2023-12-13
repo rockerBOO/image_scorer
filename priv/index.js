@@ -1,4 +1,4 @@
-import { connected, debounce, shuffle } from "./main.js";
+import { trySyncMessage, hashFile, debounce, shuffle } from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -8,37 +8,20 @@ const imageEle = document.querySelector("#image");
 const scoreContainerEle = document.querySelector("#score-container");
 const scoreValueEle = document.querySelector("#score-value");
 
-async function placeScore(image, score) {
-  if (!connected()) {
-    return;
-  }
-
-  if (!image) {
-    console.error("image wtf");
-  }
-
-  ws().send(encode({ messageType: "rate", image, rating: score }));
-  return setScoreValue(score);
+async function placeScore(image_hash, score) {
+  return trySyncMessage({
+    messageType: "place_score",
+    image_hash,
+		// dang javascript make it a float!
+		score: score + 0.000000000000001,
+  });
 }
 
-
 async function getScore(image) {
-  if (!connected()) {
-    return;
-  }
-  ws().send(encode({ messageType: "get_rating", image }));
-
-  const listener = async (event) => {
-    const { messageType, rating } = await decode(event.data);
-    ws.removeEventListener("message", listener);
-  };
-
-  ws().addEventListener("message", listener);
-
-  // Make sure we remove the listener if anything fails
-  setTimeout(() => {
-    ws.removeEventListener("message", listener);
-  }, 5000);
+  return trySyncMessage({
+    messageType: "get_image_score",
+    image_hash: await hashFile(image),
+  });
 }
 
 async function increment() {
@@ -143,25 +126,25 @@ window.addEventListener(
     }
 
     if (e.key == "1") {
-      placeScore(imagesList[imageIdx], 1).then(increment);
+      placeScore(imagesList[imageIdx], 1.).then(increment);
     } else if (e.key == "2") {
-      placeScore(imagesList[imageIdx], 2).then(increment);
+      placeScore(imagesList[imageIdx], 2.).then(increment);
     } else if (e.key == "3") {
-      placeScore(imagesList[imageIdx], 3).then(increment);
+      placeScore(imagesList[imageIdx], 3.).then(increment);
     } else if (e.key == "4") {
-      placeScore(imagesList[imageIdx], 4).then(increment);
+      placeScore(imagesList[imageIdx], 4.).then(increment);
     } else if (e.key == "5") {
-      placeScore(imagesList[imageIdx], 5).then(increment);
+      placeScore(imagesList[imageIdx], 5.).then(increment);
     } else if (e.key == "6") {
-      placeScore(imagesList[imageIdx], 6).then(increment);
+      placeScore(imagesList[imageIdx], 6.).then(increment);
     } else if (e.key == "7") {
-      placeScore(imagesList[imageIdx], 7).then(increment);
+      placeScore(imagesList[imageIdx], 7.).then(increment);
     } else if (e.key == "8") {
-      placeScore(imagesList[imageIdx], 8).then(increment);
+      placeScore(imagesList[imageIdx], 8.).then(increment);
     } else if (e.key == "9") {
-      placeScore(imagesList[imageIdx], 9).then(increment);
+      placeScore(imagesList[imageIdx], 9.).then(increment);
     } else if (e.key == "0") {
-      placeScore(imagesList[imageIdx], 10).then(increment);
+      placeScore(imagesList[imageIdx], 10.).then(increment);
     } else if (e.key == "-") {
       decrement();
     } else if (e.key == "u") {
@@ -194,7 +177,9 @@ rating.addEventListener("submit", (e) => {
     }
   }
   // console.log('submit rating', e.submitter.value);
-  placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
+  placeScore(imagesList[imageIdx], parseFloat(e.submitter.value)).then(
+    increment,
+  );
 });
 
 let scoreValueTimeout;

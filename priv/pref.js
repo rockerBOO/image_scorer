@@ -1,9 +1,19 @@
-import { ws, encode, decode, connected, debounce, shuffle } from "./main.js";
+import {
+  // ws,
+  syncMessage,
+	hashFile,
+  // encode,
+  // decode,
+  // connected,
+  // debounce,
+  shuffle,
+} from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
 let showImageCount = 4;
 let clickRated;
+
 
 let imagesElem = document.querySelector("#images");
 
@@ -59,25 +69,36 @@ function pickPreference(image, others) {
 async function increment() {
   return new Promise((resolve, _reject) => {
     imageIdx += showImageCount;
-
-    if (imageIdx >= imagesList.length - 1) {
-      // imagesList = [];
-    }
-    getScores(imagesList, imageIdx);
-    clearPrediction();
-    getAestheticScores(imagesList, imageIdx).then((scores) => {
-      scores.forEach(async (score, i) => {
-        const predictionEle = getBlockElement(i).querySelector(".prediction");
-        predictionEle.classList.remove("predicting");
-        predictionEle.classList.add("predicted");
-        predictionEle.textContent = score.toPrecision(2);
-      });
-    });
-    resolve();
+    resolve(updateScores());
   }).then(imageLoad);
 }
 
-function clearPrediction() {
+async function updateScores() {
+  return Promise.all([
+    getScores(imagesList, imageIdx)
+      .then(({ scores }) => {
+        console.log("scores", scores);
+      })
+      .catch((e) => {
+        console.log("Could not process aesthetic score", e);
+      }),
+    clearPrediction(),
+    getAestheticScores(imagesList, imageIdx)
+      .then((scores) => {
+        scores.forEach(async (score, i) => {
+          const predictionEle = getBlockElement(i).querySelector(".prediction");
+          predictionEle.classList.remove("predicting");
+          predictionEle.classList.add("predicted");
+          predictionEle.textContent = score.toPrecision(2);
+        });
+      })
+      .catch((e) => {
+        console.log("Could not process aesthetic score", e);
+      }),
+  ]);
+}
+
+async function clearPrediction() {
   const predictionEles = document.querySelectorAll(".prediction");
 
   predictionEles.forEach((predictedEle) => {
@@ -100,17 +121,7 @@ async function decrement() {
       if (imageIdx == -1) {
         imageIdx = imagesList.length - 1;
       }
-      getScores(imagesList, imageIdx);
-      clearPrediction();
-      getAestheticScores(imagesList, imageIdx).then((scores) => {
-        scores.forEach((score, i) => {
-          const predictionEle = getBlockElement(i).querySelector(".prediction");
-          predictionEle.classList.remove("predicting");
-          predictionEle.classList.add("predicted");
-          predictionEle.textContent = score.toPrecision(2);
-        });
-      });
-      resolve();
+      resolve(updateScores());
     }, 500);
   }).then(imageLoad);
 }
@@ -201,41 +212,10 @@ async function getAestheticScore(image) {
     .then(({ aesthetic_score }) => aesthetic_score);
 }
 
-async function hashFile(file) {
-  let data = await fetch(file).then((res) => {
-    if (!res.ok) {
-      throw new Error("Invalid file " + file);
-    }
-    return res.blob();
-  });
-
-  // const encoder = new TextEncoder();
-  // const data = encoder.encode(message);
-  const hash = await crypto.subtle.digest("SHA-1", await data.arrayBuffer());
-  return hash;
-}
 
 async function getScores() {
-  if (!connected()) {
-    return;
-  }
-
-  ws().send(
-    encode({
-      messageType: "get_ratings",
-      images: Promise.all(getImages().map(hashFile)),
-    }),
-  );
-
-  const listener = async (event) => {
-    const { messageType, rating } = await decode(event.data);
-    ws.removeEventListener("message", listener);
-  };
-
-  ws().addEventListener("message", listener);
-
-  // Make sure we remove the listener if anything fails
-  setTimeout(() => {
-    ws.removeEventListener("message", listener);
-  }, 5000);
+  return syncMessage({
+    messageType: "get_images_score",
+    image_hashes: await Promise.all(getImages().map(hashFile)),
+  });
 }
