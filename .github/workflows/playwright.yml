@@ -16,8 +16,8 @@ jobs:
         with:
           node-version: 18
       - name: Install dependencies
-        run: npm ci
+        run: yarn install --immutable
       - name: Run your tests
-        run: npx playwright test
+        run: yarn playwright test
         env:
           HOME: /root
