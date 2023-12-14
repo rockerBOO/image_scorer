@@ -25,7 +25,7 @@ jobs:
           ImageOS: ubuntu22
       - run: gleam deps download
       - name: c compiler for sqlite
-        run: apt install build-essential
+        run: apt update && apt install build-essential
       - name: enable corepack
         run: corepack enable
       - name: Install dependencies
