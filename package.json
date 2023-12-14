@@ -1,0 +1,12 @@
+{
+  "name": "image_scorer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:rockerBOO/image_scorer.git",
+  "author": "rockerBOO <rockerboo@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.1"
+  },
+  "packageManager": "yarn@4.0.2"
+}

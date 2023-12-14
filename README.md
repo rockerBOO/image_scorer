@@ -64,6 +64,13 @@ Runs the web service for the UI
 gleam run
 ```
 
+```
+ Compiled in 0.01s
+  Running image_scorer.main
+Listening on http://localhost:3030
+Hello from image_scorer!
+```
+
 Then you can go to the web service:
 
 ```
@@ -76,6 +83,14 @@ Running the aesthetic predictive and similarity models. Using poetry to do packa
 
 ```bash
 poetry run uvicorn ae_scorer_server:app --port 3031
+```
+
+```
+Loading CLIP ViT-L-14...
+INFO:     Started server process [2399229]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:3031 (Press CTRL+C to quit)
 ```
 
 No cross domain implementation, currently.
