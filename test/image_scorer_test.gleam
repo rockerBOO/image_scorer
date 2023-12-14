@@ -66,7 +66,5 @@ pub fn process_get_image_score_test() {
 
   json_response
   |> json.to_string()
-  |> should.equal(
-    "{\"messageType\":\"get_image_score\",\"score\":null}",
-  )
+  |> should.equal("{\"messageType\":\"get_image_score\",\"score\":null}")
 }
