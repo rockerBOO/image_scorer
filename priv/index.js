@@ -1,4 +1,10 @@
-import { trySyncMessage, hashFile, debounce, shuffle } from "./main.js";
+import {
+  trySyncMessage,
+  hashFile,
+  debounce,
+  shuffle,
+  attachLoadAnimation,
+} from "./main.js";
 import { showModal } from "./image_modal.js";
 
 let imagesList = [];
@@ -53,44 +59,23 @@ async function increment() {
 
 async function decrement() {
   return new Promise((resolve, _reject) => {
-    setTimeout(() => {
-      imageIdx -= 1;
-      if (imageIdx == -1) {
-        imageIdx = imagesList.length - 1;
-      }
-      getScore(imagesList[imageIdx]).then(updateScore);
-      resolve();
-    }, 500);
+    imageIdx -= 1;
+    if (imageIdx == -1) {
+      imageIdx = imagesList.length - 1;
+    }
+    getScore(imagesList[imageIdx]).then(updateScore);
+    resolve();
   }).then(imageLoad);
 }
 
-const loadingAnimation = () => {
-  if (imageLoadTimeout) {
-    clearTimeout(imageLoadTimeout);
-  }
-  imageEle.style.animation = "";
-  imageEle.style.animation = null;
-  imageEle.classList.add("loading");
-  imageLoadTimeout = setTimeout(() => {
-    imageEle.classList.remove("loading");
-  }, 1000);
-};
-
-// observer = new MutationObserver((changes) => {
-//   changes.forEach((e) => {
-//     if (e.attributeName === "src") {
-//       loadingAnimation();
-//     }
-//   });
-// });
-// observer.observe(imageEle, { attributes: true });
-
-let imageLoadTimeout;
-
 async function imageLoad() {
   return new Promise(() => {
+    imageEle.addEventListener("load", () => {
+      attachLoadAnimation(imageEle);
+      attachModal(imageEle);
+    });
+
     imageEle.src = imagesList[imageIdx];
-		attachModal(imageEle);
   });
 }
 
@@ -224,12 +209,13 @@ function attachModal(element) {
         console.log("image element does not exist for modal");
         return;
       }
-			console.log(element);
       const modalContentEle = document.createElement("div");
-			const deep = true;
+      const deep = true;
       modalContentEle.appendChild(element.cloneNode(deep));
 
-			return modalContentEle;
+      attachLoadAnimation(modalContentEle);
+
+      return modalContentEle;
     }),
   );
 }

@@ -1,15 +1,12 @@
-import { hashFile, trySyncMessage, getFilename } from "./main.js";
+import {
+  hashFile,
+  trySyncMessage,
+  getFilename,
+  attachLoadAnimation,
+} from "./main.js";
 import { showModal } from "./image_modal.js";
 
 let imagesList = [];
-
-const observer = new MutationObserver((changes) => {
-  changes.forEach((e) => {
-    if (e.attributeName === "src") {
-      loadingAnimation();
-    }
-  });
-});
 
 fetch("/static/images.json")
   .then((resp) => {
@@ -26,8 +23,8 @@ fetch("/static/images.json")
 
     const imagesElements = images.slice(0, 100).map((image) => {
       const ele = document.createElement("img");
-      ele.onload = ele.src = image;
-      observer.observe(ele, { attributes: true });
+      attachLoadAnimation(ele);
+      ele.src = image;
 
       const block = document.createElement("div");
       block.classList.add("block");
@@ -197,12 +194,14 @@ function attachModal(element) {
         console.log("image element does not exist for modal");
         return;
       }
-			console.log(element);
+      console.log(element);
       const modalContentEle = document.createElement("div");
-			const deep = true;
+      const deep = true;
       modalContentEle.appendChild(element.cloneNode(deep));
 
-			return modalContentEle;
+      attachLoadAnimation(element);
+
+      return modalContentEle;
     }),
   );
 }

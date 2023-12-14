@@ -1,6 +1,12 @@
+body {
+	display: grid;
+	grid-template-rows: 8fr 1fr;
+}
+
 main {
 	display: grid;
 	place-items: center;
+	grid-template-rows: auto 3fr 1fr 0.5fr;
 }
 
 #similarity {
@@ -26,7 +32,8 @@ main {
 
 #images img {
   max-width: 40vmin;
-  max-height: minmax(80vmin, 1fr);
+  max-height: minmax(40vh, 1fr);
+	height: auto;
 }
 
 .similarity-score {

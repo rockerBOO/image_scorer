@@ -15,13 +15,15 @@
     <main>
       <h1>Similarity</h1>
       <div id="images">
-        <div><img src="/images/00306-3900798205.png" /></div>
-        <div><img src="/images/00112-4246239745.png" /></div>
+        <div><img id="image1" src="/images/00306-3900798205.png" /></div>
+        <div><img id="image2" src="/images/00112-4246239745.png" /></div>
       </div>
       <div class="similarity-score">
         <div id="similarity"></div>
         <div class="note">Cosine similarity</div>
       </div>
+			<div><button id="random">Random</button></div>
+			<div><form id="upload"><input id="file-upload" type="file" /></form></div>
     </main>
     <footer>
       <div class="note">Uses CLIP Image features to compare</div>

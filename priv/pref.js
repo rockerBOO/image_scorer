@@ -4,6 +4,7 @@ import {
   hashFile,
   shuffle,
   trySyncMessage,
+  attachLoadAnimation,
 } from "./main.js";
 
 let imagesList = [];
@@ -182,6 +183,7 @@ async function imageLoad() {
       imageEle.src = imagesList[imageIdx + i];
       imageEle.dataset.id = imageIdx + i;
       imageEle.dataset.file = imagesList[imageIdx + i];
+			attachLoadAnimation(imageEle);
     });
     resolve();
   });

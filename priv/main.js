@@ -91,6 +91,31 @@ export async function syncMessage(message, timeout = 5000) {
   });
 }
 
+export function attachLoadAnimation(element) {
+  const observer = new MutationObserver((changes) => {
+    changes.forEach((e) => {
+      if (e.attributeName === "src") {
+        loadingAnimation(element);
+      }
+    });
+  });
+  observer.observe(element, { attributes: true });
+}
+
+let imageLoadTimeout;
+
+export function loadingAnimation(element) {
+  if (imageLoadTimeout) {
+    clearTimeout(imageLoadTimeout);
+  }
+  element.style.animation = "";
+  element.style.animation = null;
+  element.classList.add("loading");
+  imageLoadTimeout = setTimeout(() => {
+    element.classList.remove("loading");
+  }, 1000);
+};
+
 // WebSocket
 //
 let websocket;

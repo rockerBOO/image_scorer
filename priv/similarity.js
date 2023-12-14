@@ -1,5 +1,5 @@
 import { showModal } from "./image_modal.js";
-import { getFilename } from "./main.js";
+import { getFilename, attachLoadAnimation } from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -78,10 +78,26 @@ async function getAestheticScore(image) {
     })
     .then(({ aesthetic_score }) => aesthetic_score);
 }
+function onLoad() {
+  const imgEle1 = document.querySelector("#image1");
+  const imgEle2 = document.querySelector("#image2");
+
+  attachImageModal(imgEle1);
+  attachLoadAnimation(imgEle1);
+
+  attachImageModal(imgEle2);
+  attachLoadAnimation(imgEle2);
+
+  randomSimilarityTest();
+}
 
 function getImages() {
   const images = sessionStorage.getItem("images");
   if (images) {
+    imageIdx = 0;
+    imagesList = JSON.parse(images);
+
+    onLoad();
     return images;
   }
 
@@ -97,7 +113,9 @@ function getImages() {
       console.log(images);
       imageIdx = 0;
       imagesList = images;
-      sessionStorage.setItem("images", images);
+      sessionStorage.setItem("images", JSON.stringify(images));
+
+      onLoad();
     })
     .catch((err) => {
       console.error(err);
@@ -105,33 +123,63 @@ function getImages() {
 }
 
 getImages();
-getSimilarity(
-  "/images/00306-3900798205.png",
-  "/images/00112-4246239745.png",
-).then((similarity) => {
-  const imagesEle = document.querySelector("#images");
-  for (let blockId in imagesEle.children) {
-    const imgEle = imagesEle.children.item(blockId).querySelector("img");
 
-    attachImageModal(imgEle);
-  }
+function randomImage(list, max) {
+  console.log("max", max);
+  console.log(Math.floor(Math.random() * max));
+  return list[Math.floor(Math.random() * max)];
+}
 
-  const simElement = document.querySelector("#similarity");
-  simElement.textContent = similarity.toPrecision(4);
-});
+function randomSimilarityTest() {
+  console.log(imagesList);
+  const image1 = randomImage(imagesList, imagesList.length - 1);
+  const image2 = randomImage(imagesList, imagesList.length - 1);
+  console.log("image1", image1, "image2", image2);
+  getSimilarity(image1, image2).then((similarity) => {
+    console.log(similarity);
+
+    const imgEle1 = document.querySelector("#image1");
+    const imgEle2 = document.querySelector("#image2");
+    imgEle1.src = image1;
+    console.log("image1", image1);
+    imgEle2.src = image2;
+    console.log("image2", image2);
+
+    const simElement = document.querySelector("#similarity");
+    simElement.textContent = similarity.toPrecision(4);
+  });
+}
 
 function attachImageModal(imageElement) {
-  if (!imageElement) {
-    console.log("image element does not exist for modal");
-
-    return;
-  }
-
-  const modalContentEle = document.createElement("div");
-  modalContentEle.appendChild(imageElement.cloneNode());
-
   imageElement.addEventListener(
     "click",
-    showModal(() => modalContentEle),
+    showModal(() => {
+      if (!imageElement) {
+        console.log("image element does not exist for modal");
+
+        return;
+      }
+
+      const modalContentEle = document.createElement("div");
+      modalContentEle.appendChild(imageElement.cloneNode());
+
+      return modalContentEle;
+    }),
   );
 }
+
+document.querySelector("#random").addEventListener("click", (e) => {
+  e.preventDefault();
+  randomSimilarityTest();
+});
+
+const uploadForm = document.querySelector("#upload");
+const fileUploadEle = document.querySelector("#file-upload");
+
+uploadForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+});
+
+fileUploadEle.addEventListener("change", (e) => {
+  e.preventDefault();
+});

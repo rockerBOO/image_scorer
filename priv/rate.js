@@ -5,6 +5,7 @@ import {
   hashFile,
   debounce,
   shuffle,
+  attachLoadAnimation,
 } from "./main.js";
 
 import { showModal } from "./image_modal.js";
@@ -56,6 +57,8 @@ async function increment() {
 
 async function onLoad() {
   clearPrediction();
+  clearRating();
+  getScore(imagesList[imageIdx]).then(updateRating);
   getAestheticScore(imagesList[imageIdx]).then((score) => {
     const predictedEle = document.querySelector("#predicted");
     predictedEle.classList.remove("predicting");
@@ -92,33 +95,11 @@ async function decrement() {
   }).then(imageLoad);
 }
 
-const loadingAnimation = () => {
-  if (imageLoadTimeout) {
-    clearTimeout(imageLoadTimeout);
-  }
-  imageEle.style.animation = "";
-  imageEle.style.animation = null;
-  imageEle.classList.add("loading");
-  imageLoadTimeout = setTimeout(() => {
-    imageEle.classList.remove("loading");
-  }, 1000);
-};
-
-// observer = new MutationObserver((changes) => {
-//   changes.forEach((e) => {
-//     if (e.attributeName === "src") {
-//       loadingAnimation();
-//     }
-//   });
-// });
-// observer.observe(imageEle, { attributes: true });
-
-let imageLoadTimeout;
-
 async function imageLoad() {
   return new Promise(() => {
     imageEle.src = imagesList[imageIdx];
-		attachModal(imageEle)
+    attachModal(imageEle);
+    attachLoadAnimation(imageEle);
   });
 }
 
@@ -180,7 +161,7 @@ async function getAestheticScore(image) {
 const skipEle = document.querySelector("#skip");
 const backEle = document.querySelector("#back");
 const skipFun = () => {
-  setScoreValue("skipped").then(increment);
+  increment();
 };
 const backFun = () => {
   decrement();
@@ -188,89 +169,29 @@ const backFun = () => {
 skipEle.addEventListener("click", skipFun);
 backEle.addEventListener("click", backFun);
 
-const pressScoreList = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
-window.addEventListener(
-  "keypress",
-  debounce((e) => {
-    // Limit double, and rapid scoring
-    if (e.key in pressScoreList) {
-      if (clickRated) {
-        return;
-      }
-    }
 
-    if (e.key == "1") {
-      placeScore(imagesList[imageIdx], 1).then(increment);
-    } else if (e.key == "2") {
-      placeScore(imagesList[imageIdx], 2).then(increment);
-    } else if (e.key == "3") {
-      placeScore(imagesList[imageIdx], 3).then(increment);
-    } else if (e.key == "4") {
-      placeScore(imagesList[imageIdx], 4).then(increment);
-    } else if (e.key == "5") {
-      placeScore(imagesList[imageIdx], 5).then(increment);
-    } else if (e.key == "6") {
-      placeScore(imagesList[imageIdx], 6).then(increment);
-    } else if (e.key == "7") {
-      placeScore(imagesList[imageIdx], 7).then(increment);
-    } else if (e.key == "8") {
-      placeScore(imagesList[imageIdx], 8).then(increment);
-    } else if (e.key == "9") {
-      placeScore(imagesList[imageIdx], 9).then(increment);
-    } else if (e.key == "0") {
-      placeScore(imagesList[imageIdx], 10).then(increment);
-    } else if (e.key == "-") {
-      decrement();
-    } else if (e.key == "u") {
-      skipFun();
-    } else if (e.key == "d") {
-      decrement();
-    } else if (e.key == "j") {
-      skipFun();
-    } else if (e.key == "f") {
-      decrement();
-    } else if (e.key == "b") {
-      decrement();
-    } else if (e.key == "s") {
-      skipFun();
-    } else if (e.key == " ") {
-      skipFun();
-    }
-    console.log(e.key);
-  }, 300),
-);
+function attachControls() {
+	const minusMinus = document.querySelector("#minus-minus")
+	const minus = document.querySelector("#minus")
+	const plus = document.querySelector("#plus")
+	const plusPlus = document.querySelector("#plus-plus")
 
-// const rating = document.querySelector("#rate");
-// rating.addEventListener("submit", (e) => {
-//   e.preventDefault();
-//
-//   // Limit double, and rapid scoring
-//   if (e.key in pressScoreList) {
-//     if (clickRated) {
-//       return;
-//     }
-//   }
-//   // console.log('submit rating', e.submitter.value);
-//   placeScore(imagesList[imageIdx], parseInt(e.submitter.value)).then(increment);
-// });
-
-let scoreValueTimeout = undefined;
-
-async function setScoreValue(score) {
-  return new Promise((resolve, _reject) => {
-    if (scoreValueTimeout) {
-      clearTimeout(scoreValueTimeout);
-    }
-    scoreValueEle.textContent = score;
-    scoreValueEle.style.animation = "";
-    scoreValueEle.style.animation = null;
-    scoreValueEle.classList.add("scored");
-    scoreValueTimeout = setTimeout(() => {
-      scoreValueEle.classList.remove("scored");
-      resolve(score);
-    }, 240);
-  });
+	minusMinus.addEventListener("click", (e) => {
+		e.preventDefault()
+	});
+	minus.addEventListener("click", (e) => {
+		e.preventDefault()
+	});
+	plus.addEventListener("click", (e) => {
+		e.preventDefault()
+	});
+	plusPlus.addEventListener("click", (e) => {
+		e.preventDefault()
+	});
 }
+
+attachControls();
+
 async function clearRating() {
   const rateEle = document.querySelector("#rating");
 
@@ -303,12 +224,12 @@ function attachModal(element) {
         console.log("image element does not exist for modal");
         return;
       }
-			console.log(element);
+      console.log(element);
       const modalContentEle = document.createElement("div");
-			const deep = true;
+      const deep = true;
       modalContentEle.appendChild(element.cloneNode(deep));
 
-			return modalContentEle;
+      return modalContentEle;
     }),
   );
 }

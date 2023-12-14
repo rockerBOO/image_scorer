@@ -1,3 +1,8 @@
+.env
+.venv
+
+__pycache__
+
 *.beam
 *.ez
 build

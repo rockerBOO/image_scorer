@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "image-scorer"
+version = "0.1.0"
+description = ""
+authors = ["rockerBOO <rockerboo@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+open-clip-torch = "^2.23.0"
+sd-ext = {git = "https://github.com/rockerBOO/sd-ext"}
+fastapi = "^0.105.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
+python-multipart = "^0.0.6"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

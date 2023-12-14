@@ -1,8 +1,29 @@
 # image_scorer
 
+<!--toc:start-->
+
+- [image_scorer](#imagescorer)
+  - [Experiments](#experiments)
+  - [Usage](#usage)
+    - [Create images.json](#create-imagesjson)
+    - [Web service](#web-service)
+    - [Aesthetic prediction and similarity](#aesthetic-prediction-and-similarity)
+  - [Tests](#tests)
+  - [Contribute](#contribute)
+  - [TODO](#todo)
+    - [Additional improvements](#additional-improvements)
+  - [BUGS](#bugs) 
+    - [Preference](#preference)
+  <!--toc:end-->
+
 Web application for capturing image scores. Different experiments for capturing the image ratings.
 
-## WIP Not working all yet but here are some samples
+## Experiments
+
+- Score an image
+- Rate an image
+- Preference
+- Similarity
 
 ![](https://github.com/rockerBOO/image_scorer/assets/15027/ea4a48fe-a6b7-4e73-bc74-8502a4f311c1)
 
@@ -16,10 +37,54 @@ Get a predicted score, and modify it to the rating you think it should be. `--` 
 
 Pick a image you prefer out of the list of 4 images. Alternative of best of 2 images.
 
-## Additional improvements
+## Usage
 
-- Save each latents and CLIP image embeddings for the images
-- Compare the aesthetic predictor score with images shown
+```bash
+git clone https://github.com/rockerBOO/image_scorer
+cd image_scorer
+```
+
+### Create images.json
+
+We use `images.json` to create a list of images to rate. Images must be stored in `images/` in the main directory. (Not ideal, but how it works)
+
+```
+python make_images_json.py images
+```
+
+Puts the `images.json` into `priv/images.json`
+
+These images will be viewable though `images/` URL.
+
+### Web service
+
+Runs the web service for the UI
+
+```bash
+gleam run
+```
+
+Then you can go to the web service:
+
+```
+http://localhost:3000/
+```
+
+### Aesthetic prediction and similarity
+
+Running the aesthetic predictive and similarity models. Using poetry to do package management.
+
+```bash
+poetry run uvicorn ae_scorer_server:app --port 3031
+```
+
+No cross domain implementation, currently.
+
+## Tests
+
+```bash
+gleam test
+```
 
 ## Contribute
 
@@ -27,7 +92,17 @@ Not open for improvements as it's still a work in progress, but any feedback is 
 
 ## TODO
 
--
+- Finish rate.html plus/minus
+- Finish similarity file upload
+- Finish similarity dataset
+- Cleanup JS
+- Cleanup styling
+- Complete model hosting
+- Deploy
+
+### Additional improvements
+
+- Save each latent and CLIP image embeddings for the images
 
 ## BUGS
 
