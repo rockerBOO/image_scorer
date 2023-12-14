@@ -15,6 +15,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "26.0.2"
+          gleam-version: "0.32.4"
+          rebar3-version: "3"
+          # elixir-version: "1.15.4"
+      - run: gleam deps download
       - name: enable corepack
         run: corepack enable
       - name: Install dependencies
