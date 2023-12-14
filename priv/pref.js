@@ -183,7 +183,7 @@ async function imageLoad() {
       imageEle.src = imagesList[imageIdx + i];
       imageEle.dataset.id = imageIdx + i;
       imageEle.dataset.file = imagesList[imageIdx + i];
-			attachLoadAnimation(imageEle);
+      attachLoadAnimation(imageEle);
     });
     resolve();
   });

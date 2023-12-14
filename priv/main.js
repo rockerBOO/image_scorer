@@ -42,7 +42,7 @@ export function getFilename(file) {
 
 export async function hashFile(file) {
   const filename = getFilename(file);
-	const sessionHash = sessionStorage.getItem(filename)
+  const sessionHash = sessionStorage.getItem(filename);
   if (sessionHash) {
     return sessionHash;
   }
@@ -114,7 +114,7 @@ export function loadingAnimation(element) {
   imageLoadTimeout = setTimeout(() => {
     element.classList.remove("loading");
   }, 1000);
-};
+}
 
 // WebSocket
 //

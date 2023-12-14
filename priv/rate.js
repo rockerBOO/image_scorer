@@ -169,25 +169,24 @@ const backFun = () => {
 skipEle.addEventListener("click", skipFun);
 backEle.addEventListener("click", backFun);
 
-
 function attachControls() {
-	const minusMinus = document.querySelector("#minus-minus")
-	const minus = document.querySelector("#minus")
-	const plus = document.querySelector("#plus")
-	const plusPlus = document.querySelector("#plus-plus")
+  const minusMinus = document.querySelector("#minus-minus");
+  const minus = document.querySelector("#minus");
+  const plus = document.querySelector("#plus");
+  const plusPlus = document.querySelector("#plus-plus");
 
-	minusMinus.addEventListener("click", (e) => {
-		e.preventDefault()
-	});
-	minus.addEventListener("click", (e) => {
-		e.preventDefault()
-	});
-	plus.addEventListener("click", (e) => {
-		e.preventDefault()
-	});
-	plusPlus.addEventListener("click", (e) => {
-		e.preventDefault()
-	});
+  minusMinus.addEventListener("click", (e) => {
+    e.preventDefault();
+  });
+  minus.addEventListener("click", (e) => {
+    e.preventDefault();
+  });
+  plus.addEventListener("click", (e) => {
+    e.preventDefault();
+  });
+  plusPlus.addEventListener("click", (e) => {
+    e.preventDefault();
+  });
 }
 
 attachControls();

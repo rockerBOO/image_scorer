@@ -42,14 +42,14 @@ input[type="submit"]:focus {
   outline: 5px solid #bfbc00;
 }
 
-
 a {
-	color: #82a4a4;
+  color: #82a4a4;
 }
 
-a:hover, a:focus {
-	color: #00ffc3;
-	text-decoration-thickness: 0.25em;
+a:hover,
+a:focus {
+  color: #00ffc3;
+  text-decoration-thickness: 0.25em;
 }
 
 #rating {
@@ -193,30 +193,29 @@ a:hover, a:focus {
 }
 
 #modal-overlay {
-	display: grid;
-	place-items: center;
-	position: fixed;
-	left: 0;
-	top: 0;
-	height: 100%;
-	width: 100%;
-	background-color: hsla(170, 80%, 0%, 0.8);
+  display: grid;
+  place-items: center;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background-color: hsla(170, 80%, 0%, 0.8);
 }
-#modal-overlay  img { 
-	max-height: 80vh;
+#modal-overlay img {
+  max-height: 80vh;
 }
 
 footer {
-	width: 100%;
+  width: 100%;
 }
 
 footer nav ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: grid;
-	grid-auto-flow: column;
-	place-items: center;
-	grid-gap: 1em;
-
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  place-items: center;
+  grid-gap: 1em;
 }

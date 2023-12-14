@@ -1,12 +1,12 @@
 body {
-	display: grid;
-	grid-template-rows: 8fr 1fr;
+  display: grid;
+  grid-template-rows: 8fr 1fr;
 }
 
 main {
-	display: grid;
-	place-items: center;
-	grid-template-rows: auto 3fr 1fr 0.5fr;
+  display: grid;
+  place-items: center;
+  grid-template-rows: auto 3fr 1fr 0.5fr;
 }
 
 #similarity {
@@ -18,10 +18,10 @@ main {
 }
 
 #images {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	place-items: center;
-	grid-gap: 1em;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  grid-gap: 1em;
 }
 
 .fetched {
@@ -33,19 +33,19 @@ main {
 #images img {
   max-width: 40vmin;
   max-height: minmax(40vh, 1fr);
-	height: auto;
+  height: auto;
 }
 
 .similarity-score {
-	display: grid;
-	place-items: center;
+  display: grid;
+  place-items: center;
 }
 
 footer {
-	display: grid;
-	place-items: center;
+  display: grid;
+  place-items: center;
 }
 
 .note {
-	opacity: 0.5;
+  opacity: 0.5;
 }

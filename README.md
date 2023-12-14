@@ -12,9 +12,9 @@
   - [Contribute](#contribute)
   - [TODO](#todo)
     - [Additional improvements](#additional-improvements)
-  - [BUGS](#bugs) 
+  - [BUGS](#bugs)
     - [Preference](#preference)
-  <!--toc:end-->
+    <!--toc:end-->
 
 Web application for capturing image scores. Different experiments for capturing the image ratings.
 

@@ -11,7 +11,7 @@ function clearModal() {
 
 export function showModal(getModalContentEle) {
   return function (_e) {
-		clearModal();
+    clearModal();
     const modalElement = document.createElement("div");
 
     modalElement.id = "modal-overlay";
@@ -22,12 +22,12 @@ export function showModal(getModalContentEle) {
     // modalElement.appendChild(imageElement);
     modalElement.appendChild(getModalContentEle());
 
-		// // Eat the click events before the modal
-		// imageElement.addEventListener("click", (e) => {
-		// 	e.preventDefault();
-		// });
+    // // Eat the click events before the modal
+    // imageElement.addEventListener("click", (e) => {
+    // 	e.preventDefault();
+    // });
 
-		modalElement.addEventListener("click", clearModal);
+    modalElement.addEventListener("click", clearModal);
 
     document.body.appendChild(modalElement);
   };
