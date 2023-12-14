@@ -42,5 +42,7 @@ export default defineConfig({
     command: "gleam run",
     url: "http://127.0.0.1:3030",
     reuseExistingServer: !process.env.CI,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });
