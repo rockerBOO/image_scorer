@@ -2,9 +2,9 @@ import sqlight
 import gleam/result
 import gleam/dynamic.{float, int, string}
 import gleam/list
-import gleam/io
-import gleam/option.{type Option, None, Some}
+import gleam/option.{type Option, Some}
 import gleam/int
+import gleam/io
 import gleam/float
 import image_scorer/db
 import image_scorer/error
@@ -94,7 +94,7 @@ pub fn get_image_score_for_user(
     "select score from image_scores where image_id = ? and user_id = ?",
     conn,
     [sqlight.int(image_id), sqlight.int(user_id)],
-    expecting: dynamic.field("score", dynamic.float),
+    expecting: dynamic.element(0, dynamic.float),
   )
   |> db.single_float()
 }

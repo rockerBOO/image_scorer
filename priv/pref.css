@@ -11,7 +11,7 @@ main {
 }
 #images > div > *,
 #images > div::before {
-	grid-area: box;
+  grid-area: box;
 }
 
 img {
@@ -50,8 +50,15 @@ footer {
 }
 
 .prediction {
-	background-color: hsl(180, 100%, 2.5%, 0.5);
-	padding: 0.5em;
-	border-top-left-radius: 0.5em;
-	place-self: end;
+  background-color: hsl(180, 100%, 2.5%, 0.5);
+  padding: 0.5em;
+  border-top-left-radius: 0.5em;
+  place-self: end;
+}
+
+.rating {
+  background-color: hsl(180, 100%, 2.5%, 0.5);
+  padding: 0.5em;
+  border-top-right-radius: 0.5em;
+  place-self: end start;
 }

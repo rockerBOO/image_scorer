@@ -25,6 +25,12 @@ const imageEles = [...Array(showImageCount).keys()].map(() => {
 
   div.appendChild(prediction);
 
+  const rating = document.createElement("div");
+  rating.classList.add("rating");
+  rating.textContent = "-";
+
+  div.appendChild(rating);
+
   imagesElem.appendChild(div);
   return img;
 });
@@ -77,28 +83,43 @@ async function increment() {
 }
 
 async function updateScores() {
-  return Promise.all([
-    getScores(imagesList, imageIdx)
-      .then(({ scores }) => {
-        console.log("scores", scores);
-      })
-      .catch((e) => {
-        console.log("Could not process aesthetic score", e);
-      }),
-    clearPrediction(),
-    getAestheticScores(imagesList, imageIdx)
-      .then((scores) => {
-        scores.forEach(async (score, i) => {
-          const predictionEle = getBlockElement(i).querySelector(".prediction");
-          predictionEle.classList.remove("predicting");
-          predictionEle.classList.add("predicted");
-          predictionEle.textContent = score.toPrecision(2);
-        });
-      })
-      .catch((e) => {
-        console.log("Could not process aesthetic score", e);
-      }),
-  ]);
+  clearPrediction();
+  clearRating();
+  getScores(imagesList)
+    .then(({ scores }) => {
+      Object.entries(document.querySelector("#images").children).forEach(
+        ([_, imageBlock], i) => {
+          const rating = imageBlock.querySelector(".rating");
+
+          if (!rating) {
+            return;
+          }
+
+          if (!scores[i]) {
+            return;
+          }
+
+          rating.textContent = scores[i].toPrecision(2);
+          rating.classList.remove("predicting");
+          rating.classList.add("predicted");
+        },
+      );
+    })
+    .catch((e) => {
+      console.log("Could not process aesthetic score", e);
+    });
+  getAestheticScores(imagesList, imageIdx)
+    .then((scores) => {
+      scores.forEach(async (score, i) => {
+        const predictionEle = getBlockElement(i).querySelector(".prediction");
+        predictionEle.classList.remove("predicting");
+        predictionEle.classList.add("predicted");
+        predictionEle.textContent = score.toPrecision(2);
+      });
+    })
+    .catch((e) => {
+      console.log("Could not process aesthetic score", e);
+    });
 }
 
 async function clearPrediction() {
@@ -226,6 +247,16 @@ async function getAestheticScore(image) {
       return resp.json();
     })
     .then(({ aesthetic_score }) => aesthetic_score);
+}
+
+async function clearRating() {
+  const ratingEles = document.querySelectorAll(".rating");
+
+  ratingEles.forEach((rateEle) => {
+    rateEle.textContent = "-";
+    rateEle.classList.remove("predicted");
+    rateEle.classList.add("predicting");
+  });
 }
 
 async function getScores() {

@@ -12,7 +12,6 @@ create table if not exists images_preferences
       image_id INTEGER  not null, 
       other_id int not null, 
       user_id int not null, 
-      rating REAL, 
       created DATETIME not null,
       foreign key(image_id) references images(id)
       foreign key(user_id) references users(id)
@@ -25,7 +24,8 @@ create table if not exists images
       id INTEGER PRIMARY KEY, 
       hash text, 
       name text, 
-      created datetime not null
+      created datetime not null,
+      UNIQUE(hash, name)
     );
 
 create table if not exists user_image 
@@ -59,11 +59,16 @@ create unique index if not exists image_scores_image_id_user_id on images_prefer
 pub fn single_int(from: Result(List(Int), sqlight.Error)) {
   from
   |> result.map(fn(l) {
-    let assert Ok(res) =
+    case
       l
-      |> list.first()
-
-    res
+      |> list.is_empty()
+    {
+      True -> None
+      False ->
+        l
+        |> list.first()
+        |> option.from_result()
+    }
   })
   |> result.map_error(fn(err) { error.SqlError(err) })
 }
@@ -88,11 +93,16 @@ pub fn single_float(from: Result(List(Float), sqlight.Error)) {
 pub fn single(from: Result(List(_), sqlight.Error)) {
   from
   |> result.map(fn(l) {
-    let assert Ok(res) =
+    case
       l
-      |> list.first()
-
-    res
+      |> list.is_empty()
+    {
+      True -> None
+      False ->
+        l
+        |> list.first()
+        |> option.from_result()
+    }
   })
   |> result.map_error(fn(err) { error.SqlError(err) })
 }

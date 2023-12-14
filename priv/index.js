@@ -8,12 +8,12 @@ const imageEle = document.querySelector("#image");
 const scoreContainerEle = document.querySelector("#score-container");
 const scoreValueEle = document.querySelector("#score-value");
 
-async function placeScore(image_hash, score) {
+async function placeScore(imageFile, score) {
   return trySyncMessage({
     messageType: "place_score",
-    image_hash,
-		// dang javascript make it a float!
-		score: score + 0.000000000000001,
+    image_hash: await hashFile(imageFile),
+    // dang javascript make it a float!
+    score: score + 0.000000000000001,
   });
 }
 
@@ -24,6 +24,20 @@ async function getScore(image) {
   });
 }
 
+function clearScore() {
+  const scoreEle = document.querySelector("#score");
+  scoreEle.textContent = "-";
+}
+
+async function updateScore({ score }) {
+  clearScore();
+  if (!score) {
+    return;
+  }
+  const scoreEle = document.querySelector("#score");
+  scoreEle.textContent = score.toPrecision(2);
+}
+
 async function increment() {
   return new Promise((resolve, _reject) => {
     imageIdx += 1;
@@ -31,7 +45,7 @@ async function increment() {
     if (imageIdx >= imagesList.length - 1) {
       imagesList = 0;
     }
-    getScore(imagesList[imageIdx]);
+    getScore(imagesList[imageIdx]).then(updateScore);
     resolve();
   }).then(imageLoad);
 }
@@ -43,7 +57,7 @@ async function decrement() {
       if (imageIdx == -1) {
         imageIdx = imagesList.length - 1;
       }
-      getScore(imagesList[imageIdx]);
+      getScore(imagesList[imageIdx]).then(updateScore);
       resolve();
     }, 500);
   }).then(imageLoad);
@@ -126,25 +140,25 @@ window.addEventListener(
     }
 
     if (e.key == "1") {
-      placeScore(imagesList[imageIdx], 1.).then(increment);
+      placeScore(imagesList[imageIdx], 1).then(increment);
     } else if (e.key == "2") {
-      placeScore(imagesList[imageIdx], 2.).then(increment);
+      placeScore(imagesList[imageIdx], 2).then(increment);
     } else if (e.key == "3") {
-      placeScore(imagesList[imageIdx], 3.).then(increment);
+      placeScore(imagesList[imageIdx], 3).then(increment);
     } else if (e.key == "4") {
-      placeScore(imagesList[imageIdx], 4.).then(increment);
+      placeScore(imagesList[imageIdx], 4).then(increment);
     } else if (e.key == "5") {
-      placeScore(imagesList[imageIdx], 5.).then(increment);
+      placeScore(imagesList[imageIdx], 5).then(increment);
     } else if (e.key == "6") {
-      placeScore(imagesList[imageIdx], 6.).then(increment);
+      placeScore(imagesList[imageIdx], 6).then(increment);
     } else if (e.key == "7") {
-      placeScore(imagesList[imageIdx], 7.).then(increment);
+      placeScore(imagesList[imageIdx], 7).then(increment);
     } else if (e.key == "8") {
-      placeScore(imagesList[imageIdx], 8.).then(increment);
+      placeScore(imagesList[imageIdx], 8).then(increment);
     } else if (e.key == "9") {
-      placeScore(imagesList[imageIdx], 9.).then(increment);
+      placeScore(imagesList[imageIdx], 9).then(increment);
     } else if (e.key == "0") {
-      placeScore(imagesList[imageIdx], 10.).then(increment);
+      placeScore(imagesList[imageIdx], 10).then(increment);
     } else if (e.key == "-") {
       decrement();
     } else if (e.key == "u") {

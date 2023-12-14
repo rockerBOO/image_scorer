@@ -12,7 +12,7 @@ import gleam/function
 import gleam/int
 import filepath
 import gleam/list
-import gleam/json.{array, float, int, object, string}
+import gleam/json.{float, int, null, object, string}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/io
@@ -140,7 +140,7 @@ fn process_new_score(conn, user_id, json) {
 }
 
 /// {messageType: "prefer", image_hash: "91jdoks", others: [{ image_hash: "" }]}
-fn process_new_preference(
+pub fn process_new_preference(
   conn,
   user_id,
   json_bits,
@@ -191,7 +191,7 @@ fn process_new_preference(
   // }
 }
 
-fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
+pub fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
   let assert Ok(hash) =
     json
     |> json.decode_bits(dynamic.field("image_hash", dynamic.string))
@@ -220,47 +220,64 @@ fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
     None ->
       Ok(object([
         #("messageType", string("get_image_score")),
-        #("error", string("No image score found")),
+        #("score", null()),
       ]))
   }
 }
 
 // { messageType: "get_image_scores", image_hashes: ["91839d93"] }
-fn process_get_images_score(conn, json) -> Result(json.Json, error.Error) {
+pub fn process_get_images_score(conn, json) -> Result(json.Json, error.Error) {
   let decoder = dynamic.field("image_hashes", dynamic.list(dynamic.string))
 
   let assert Ok(hashes) = json.decode_bits(json, decoder)
-
   let image_scores =
     hashes
-    |> list.map(fn(hash) {
-      image_score.get_image_score_by_hash(conn, hash)
-      |> result.unwrap(None)
+    |> list.map(fn(hash) { image_score.get_image_score_by_hash(conn, hash) })
+
+  // |> result.unwrap(None)
+  // let scores =
+  //   image_scores
+  //   |> list.filter(option.is_some)
+  //   |> list.map(fn(v) {
+  //     v
+  //     |> option.unwrap(-1.0)
+  //   })
+
+  let scores =
+    image_scores
+    |> list.map(fn(res) {
+      res
+      |> result.map(fn(opt) {
+        case opt {
+          Some(v) -> json.float(v)
+          None -> json.null()
+        }
+      })
+      |> result.map_error(fn(e) {
+        io.debug(e)
+        json.null()
+      })
+      |> result.unwrap(json.null())
     })
+
+  // io.debug(scores)
   Ok(object([
     #("messageType", string("get_image_scores")),
-    #(
-      "scores",
-      array(
-        image_scores
-        |> list.filter(option.is_some)
-        |> list.map(fn(v) {
-          v
-          |> option.unwrap(-1.0)
-        }),
-        float,
-      ),
-    ),
+    #("scores", json.preprocessed_array(scores)),
   ]))
+  // Ok(object([
+  //   #("messageType", string("get_image_scores")),
+  //   #("scores", string("hi")),
+  // ]))
 }
 
-fn process_get_image_scores_for_user(
-  conn,
-  user_id,
-  json,
-) -> Result(json.Json, error.Error) {
-  todo
-}
+// fn process_get_image_scores_for_user(
+//   conn,
+//   user_id,
+//   json,
+// ) -> Result(json.Json, error.Error) {
+//   todo
+// }
 
 fn handle_error(
   err: Result(_, error.Error),
@@ -335,7 +352,7 @@ fn handle_json_message(
   }
 }
 
-fn encode_bit_array(json_input: json.Json) -> BitArray {
+pub fn encode_bit_array(json_input: json.Json) -> BitArray {
   bit_array.from_string(json.to_string(json_input))
 }
 

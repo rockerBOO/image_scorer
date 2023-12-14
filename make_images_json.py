@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     args = argparser.parse_args()
 
-    cwd = Path(IMAGE_DIR)
+    cwd = Path(args.dir)
     files = get_files(cwd, args.exts)
 
     files = [file for file in files if ("mask" in str(file)) is False]

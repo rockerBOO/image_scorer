@@ -24,7 +24,7 @@ input {
 
 input[type="button"],
 input[type="submit"] {
-	padding: 0.5em;
+  padding: 0.5em;
   background-color: #062d24;
   color: white;
   border: 2px solid #005e3f;

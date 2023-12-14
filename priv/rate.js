@@ -1,4 +1,11 @@
-import { ws, encode, decode, connected, debounce, shuffle } from "./main.js";
+import {
+  ws,
+  getFilename,
+  trySyncMessage,
+  hashFile,
+  debounce,
+  shuffle,
+} from "./main.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -8,36 +15,20 @@ const imageEle = document.querySelector("#image");
 const scoreContainerEle = document.querySelector("#score-container");
 const scoreValueEle = document.querySelector("#score-value");
 
-async function placeScore(image, score) {
-  if (!connected()) {
-    return;
-  }
-
-  if (!image) {
-    console.error("image wtf");
-  }
-
-  ws().send(encode({ messageType: "rate", image, rating: score }));
-  return setScoreValue(score);
+async function placeScore(imageFile, score) {
+  return trySyncMessage({
+    messageType: "place_score",
+    image_hash: await hashFile(imageFile),
+    // dang javascript make it a float!
+    score: score + 0.000000000000001,
+  });
 }
 
 async function getScore(image) {
-  if (!connected()) {
-    return;
-  }
-  ws().send(encode({ messageType: "get_rating", image }));
-
-  const listener = async (event) => {
-    const { messageType, rating } = await decode(event.data);
-    ws().removeEventListener("message", listener);
-  };
-
-  ws().addEventListener("message", listener);
-
-  // Make sure we remove the listener if anything fails
-  setTimeout(() => {
-    ws().removeEventListener("message", listener);
-  }, 5000);
+  return trySyncMessage({
+    messageType: "get_image_score",
+    image_hash: await hashFile(image),
+  }).then(({ score }) => score);
 }
 
 async function increment() {
@@ -47,16 +38,28 @@ async function increment() {
     if (imageIdx >= imagesList.length - 1) {
       imagesList = 0;
     }
-    getScore(imagesList[imageIdx]);
     clearPrediction();
+    clearRating();
+    getScore(imagesList[imageIdx]).then(updateRating);
     getAestheticScore(imagesList[imageIdx]).then((score) => {
       const predictedEle = document.querySelector("#predicted");
       predictedEle.classList.remove("predicting");
       predictedEle.classList.add("predicted");
       predictedEle.textContent = score.toPrecision(2);
     });
+
     resolve();
   }).then(imageLoad);
+}
+
+async function onLoad() {
+  clearPrediction();
+  getAestheticScore(imagesList[imageIdx]).then((score) => {
+    const predictedEle = document.querySelector("#predicted");
+    predictedEle.classList.remove("predicting");
+    predictedEle.classList.add("predicted");
+    predictedEle.textContent = score.toPrecision(2);
+  });
 }
 
 function clearPrediction() {
@@ -73,8 +76,9 @@ async function decrement() {
       if (imageIdx == -1) {
         imageIdx = imagesList.length - 1;
       }
-      getScore(imagesList[imageIdx]);
       clearPrediction();
+      clearRating();
+      getScore(imagesList[imageIdx]).then(updateRating);
       getAestheticScore(imagesList[imageIdx]).then((score) => {
         const predictedEle = document.querySelector("#predicted");
         predictedEle.classList.remove("predicting");
@@ -141,14 +145,28 @@ fetch("/static/images.json")
   });
 
 async function getAestheticScore(image) {
-  return fetch(
-    `http://localhost:3031/aesthetic_score?image_file=${encodeURI(
-      "/home/rockerboo/code/image_scorer/" + image,
-    )}`,
-  )
+  const imageBlob = await fetch(image).then((resp) => {
+    if (!resp.ok) {
+      throw new Error("Could not load images.json");
+    }
+
+    return resp.blob();
+  });
+
+  const file = new File([imageBlob], getFilename(image), {
+    type: "image/png",
+  });
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return fetch(`http://localhost:3031/aesthetic_score`, {
+    method: "POST",
+    body: formData,
+  })
     .then((resp) => {
       if (!resp.ok) {
-        throw new Error("Could not load images.json");
+        throw new Error("Could not load aesthetic sacore");
       }
 
       return resp.json();
@@ -249,4 +267,27 @@ async function setScoreValue(score) {
       resolve(score);
     }, 240);
   });
+}
+async function clearRating() {
+  const rateEle = document.querySelector("#rating");
+
+  rateEle.textContent = "-";
+  rateEle.classList.remove("predicted");
+  rateEle.classList.add("predicting");
+}
+
+function updateRating(score) {
+  const rating = document.querySelector("#rating");
+
+  if (!rating) {
+    return;
+  }
+
+  if (!score) {
+    return;
+  }
+
+  rating.textContent = score.toPrecision(2);
+  rating.classList.remove("predicting");
+  rating.classList.add("predicted");
 }

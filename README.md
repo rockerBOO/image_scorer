@@ -24,3 +24,15 @@ Pick a image you prefer out of the list of 4 images. Alternative of best of 2 im
 ## Contribute
 
 Not open for improvements as it's still a work in progress, but any feedback is open and welcome.
+
+## TODO
+
+-
+
+## BUGS
+
+There are no bugs. … Gotcha.
+
+### Preference
+
+- Preference when one of the items is 404 causes it the crash and can't proceed

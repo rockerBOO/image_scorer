@@ -38,7 +38,7 @@ export async function decode(data) {
   return JSON.parse(await data.text());
 }
 
-export function getFilename(file) {
+function getFilename(file) {
   return file.split("/").pop();
 }
 
@@ -108,7 +108,7 @@ export async function trySyncMessage(message, timeout = 5000) {
     return syncMessage(message);
   }
 
-	console.log("not connected!")
+  console.log("not connected!");
 
   return new Promise(async (resolve, reject) => {
     // reject if we wait too long
