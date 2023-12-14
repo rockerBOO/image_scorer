@@ -7,6 +7,8 @@ import {
   shuffle,
 } from "./main.js";
 
+import { showModal } from "./image_modal.js";
+
 let imagesList = [];
 let imageIdx = 0;
 let clickRated;
@@ -116,6 +118,7 @@ let imageLoadTimeout;
 async function imageLoad() {
   return new Promise(() => {
     imageEle.src = imagesList[imageIdx];
+		attachModal(imageEle)
   });
 }
 
@@ -290,4 +293,22 @@ function updateRating(score) {
   rating.textContent = score.toPrecision(2);
   rating.classList.remove("predicting");
   rating.classList.add("predicted");
+}
+
+function attachModal(element) {
+  element.addEventListener(
+    "click",
+    showModal(() => {
+      if (!element) {
+        console.log("image element does not exist for modal");
+        return;
+      }
+			console.log(element);
+      const modalContentEle = document.createElement("div");
+			const deep = true;
+      modalContentEle.appendChild(element.cloneNode(deep));
+
+			return modalContentEle;
+    }),
+  );
 }

@@ -1,0 +1,44 @@
+main {
+	display: grid;
+	place-items: center;
+}
+
+#similarity {
+  font-size: 2em;
+}
+
+.fetching {
+  opacity: 0.3;
+}
+
+#images {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	place-items: center;
+	grid-gap: 1em;
+}
+
+.fetched {
+  animation:
+    0.75s fade-in ease-in-out,
+    1.5s scale-in ease-in-out;
+}
+
+#images img {
+  max-width: 40vmin;
+  max-height: minmax(80vmin, 1fr);
+}
+
+.similarity-score {
+	display: grid;
+	place-items: center;
+}
+
+footer {
+	display: grid;
+	place-items: center;
+}
+
+.note {
+	opacity: 0.5;
+}

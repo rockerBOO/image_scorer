@@ -1,8 +1,17 @@
+main {
+	display: grid;
+	place-items: center;
+}
+
 #images {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 35vmin);
+  /* grid-template-columns: repeat(auto-fit, minmax(35vmin, 35vmax)); */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   grid-gap: 5vmin;
   margin: 5vmin;
+	width: 90%;
+	place-items: center;
+	justify-content: center;
 }
 
 .block {

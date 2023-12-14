@@ -1,7 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title></title>
+    <title>Rate</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <meta itemprop="description" content="Rate this image" />
     <link rel="stylesheet" href="/static/main.css" />
     <link rel="stylesheet" href="/static/rate.css" />
   </head>
@@ -18,8 +24,8 @@
             </div>
             <div class="interaction">
               <div class="down">
-                <input type="submit" value="--" />
-                <input type="submit" value="-" />
+                <input id="minus-minus" type="submit" value="--" />
+                <input id="minus" type="submit" value="-" />
               </div>
               <div class="rating-score">
                 <div class="prediction-block">
@@ -32,8 +38,8 @@
                 </div>
               </div>
               <div class="up">
-                <input type="submit" value="+" />
-                <input type="submit" value="++" />
+                <input id="plus" type="submit" value="+" />
+                <input id="plus-plus" type="submit" value="++" />
               </div>
             </div>
             <div class="skip">
@@ -45,6 +51,17 @@
       </form>
     </main>
     <div id="score-container" class="score"><div id="score-value"></div></div>
+    <footer>
+      <nav>
+        <ul>
+          <li><a href="/">Score image</a></li>
+          <li><a href="/rate.html">Rate diff</a></li>
+          <li><a href="/ratings.html">Ratings</a></li>
+          <li><a href="/preference.html">Preference</a></li>
+          <li><a href="/similarity.html">Similarity</a></li>
+        </ul>
+      </nav>
+    </footer>
     <script type="module" src="/static/rate.js"></script>
   </body>
 </html>

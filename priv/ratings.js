@@ -1,4 +1,5 @@
 import { hashFile, trySyncMessage, getFilename } from "./main.js";
+import { showModal } from "./image_modal.js";
 
 let imagesList = [];
 
@@ -44,6 +45,8 @@ fetch("/static/images.json")
       rating.textContent = "-";
 
       block.appendChild(rating);
+
+      attachModal(block);
       return block;
     });
 
@@ -102,6 +105,11 @@ async function updateScores() {
         const tryElement = tryBlockElement(i);
 
         if (!tryElement) {
+          return;
+        }
+
+        // No score
+        if (!score) {
           return;
         }
 
@@ -179,4 +187,22 @@ async function getScores() {
     messageType: "get_images_score",
     image_hashes: await Promise.all(imagesList.map(hashFile)),
   });
+}
+
+function attachModal(element) {
+  element.addEventListener(
+    "click",
+    showModal(() => {
+      if (!element) {
+        console.log("image element does not exist for modal");
+        return;
+      }
+			console.log(element);
+      const modalContentEle = document.createElement("div");
+			const deep = true;
+      modalContentEle.appendChild(element.cloneNode(deep));
+
+			return modalContentEle;
+    }),
+  );
 }

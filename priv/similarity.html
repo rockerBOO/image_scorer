@@ -1,23 +1,30 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Preference</title>
+    <title>Similaritiy</title>
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1,shrink-to-fit=no"
     />
     <meta charset="utf-8" />
-    <meta itemprop="description" content="Which image is better?" />
+    <meta itemprop="description" content="Similarity" />
     <link rel="stylesheet" href="/static/main.css" />
-    <link rel="stylesheet" href="/static/pref.css" />
+    <link rel="stylesheet" href="/static/similarity.css" />
   </head>
   <body>
     <main>
-      <div id="images"></div>
+      <h1>Similarity</h1>
+      <div id="images">
+        <div><img src="/images/00306-3900798205.png" /></div>
+        <div><img src="/images/00112-4246239745.png" /></div>
+      </div>
+      <div class="similarity-score">
+        <div id="similarity"></div>
+        <div class="note">Cosine similarity</div>
+      </div>
     </main>
-
     <footer>
-      <div class="note">Pick your favorite image of these</div>
+      <div class="note">Uses CLIP Image features to compare</div>
       <nav>
         <ul>
           <li><a href="/">Score image</a></li>
@@ -28,6 +35,6 @@
         </ul>
       </nav>
     </footer>
-    <script type="module" src="/static/pref.js"></script>
+    <script type="module" src="/static/similarity.js"></script>
   </body>
 </html>

@@ -1,14 +1,19 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title></title>
+    <title>Image scorer</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <meta charset="utf-8" />
+    <meta itemprop="description" content="Rate this image" />
     <link rel="stylesheet" href="/static/main.css" />
     <link rel="stylesheet" href="/static/index.css" />
   </head>
   <body>
     <main>
       <h1>Image score</h1>
-
       <form id="rating">
         <div>
           <img id="image" src="/static/images.png" />
@@ -35,6 +40,17 @@
       </form>
     </main>
     <div id="score-container" class="score"><div id="score-value"></div></div>
+    <footer>
+      <nav>
+        <ul>
+          <li><a href="/">Score image</a></li>
+          <li><a href="/rate.html">Rate diff</a></li>
+          <li><a href="/ratings.html">Ratings</a></li>
+          <li><a href="/preference.html">Preference</a></li>
+          <li><a href="/similarity.html">Similarity</a></li>
+        </ul>
+      </nav>
+    </footer>
     <script type="module" src="/static/index.js"></script>
   </body>
 </html>

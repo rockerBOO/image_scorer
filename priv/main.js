@@ -1,5 +1,3 @@
-const imageHashes = new Map();
-
 export function debounce(callback, delay) {
   let timeout;
   return function () {
@@ -38,14 +36,15 @@ export async function decode(data) {
   return JSON.parse(await data.text());
 }
 
-function getFilename(file) {
+export function getFilename(file) {
   return file.split("/").pop();
 }
 
 export async function hashFile(file) {
   const filename = getFilename(file);
-  if (imageHashes.has(filename)) {
-    return imageHashes.get(filename);
+	const sessionHash = sessionStorage.getItem(filename)
+  if (sessionHash) {
+    return sessionHash;
   }
 
   let data = await fetch(file).then((res) => {
@@ -61,7 +60,7 @@ export async function hashFile(file) {
   );
   const hash = uint8ToHex(Array.from(new Uint8Array(hashBuffer)));
 
-  imageHashes.set(getFilename(file), hash);
+  sessionStorage.setItem(getFilename(file), hash);
   return hash;
 }
 

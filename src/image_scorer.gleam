@@ -56,6 +56,7 @@ pub fn main() {
         ["static", ..rest] -> serve_file(req, rest, priv)
         ["form"] -> handle_form(req, conn)
         ["preference.html"] -> serve_file(req, ["preference.html"], priv)
+        ["similarity.html"] -> serve_file(req, ["similarity.html"], priv)
         ["ratings.html"] -> serve_file(req, ["ratings.html"], priv)
         ["rate.html"] -> serve_file(req, ["rate.html"], priv)
         ["index.html"] -> serve_index_file(req, priv)

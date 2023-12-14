@@ -1,4 +1,5 @@
 import { trySyncMessage, hashFile, debounce, shuffle } from "./main.js";
+import { showModal } from "./image_modal.js";
 
 let imagesList = [];
 let imageIdx = 0;
@@ -89,6 +90,7 @@ let imageLoadTimeout;
 async function imageLoad() {
   return new Promise(() => {
     imageEle.src = imagesList[imageIdx];
+		attachModal(imageEle);
   });
 }
 
@@ -212,4 +214,22 @@ async function setScoreValue(score) {
       resolve(score);
     }, 240);
   });
+}
+
+function attachModal(element) {
+  element.addEventListener(
+    "click",
+    showModal(() => {
+      if (!element) {
+        console.log("image element does not exist for modal");
+        return;
+      }
+			console.log(element);
+      const modalContentEle = document.createElement("div");
+			const deep = true;
+      modalContentEle.appendChild(element.cloneNode(deep));
+
+			return modalContentEle;
+    }),
+  );
 }
