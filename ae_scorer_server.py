@@ -29,6 +29,7 @@ def get_model(model_name, embedding_size, adaptive_pool=True):
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cpu"
 model_file = "/home/rockerboo/code/sd-ext/training/sets/2023-12-10-223958/AestheticPredictorSE_ava_openai_clip_L14_5_128.safetensors"
 
 print("Loading CLIP ViT-L-14...")

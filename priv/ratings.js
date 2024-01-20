@@ -24,7 +24,7 @@ fetch("/static/images.json")
     const imagesElements = images.slice(0, 100).map((image) => {
       const ele = document.createElement("img");
       attachLoadAnimation(ele);
-      ele.src = image;
+      ele.src = encodeURI(image);
 
       const block = document.createElement("div");
       block.classList.add("block");

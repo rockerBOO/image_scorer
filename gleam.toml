@@ -20,6 +20,7 @@ sqlight = "~> 0.9"
 gleam_json = "~> 0.7"
 filepath = "~> 0.1"
 glisten = "~> 0.9"
+migrant = "~> 0.2"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

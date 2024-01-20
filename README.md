@@ -48,7 +48,7 @@ cd image_scorer
 
 We use `images.json` to create a list of images to rate. Images must be stored in `images/` in the main directory. (Not ideal, but how it works)
 
-```
+```bash
 python make_images_json.py images
 ```
 
