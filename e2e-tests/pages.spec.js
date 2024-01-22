@@ -7,25 +7,25 @@ test('index', async ({ page }) => {
 });
 
 test('similarity', async ({ page }) => {
-	await page.goto('/similarity.html');
+	await page.goto('/similarity');
 
 	await expect(page).toHaveTitle(/Similarity/);
 });
 
 test('ratings', async ({ page }) => {
-	await page.goto('/ratings.html');
+	await page.goto('/ratings');
 
 	await expect(page).toHaveTitle(/Ratings/);
 });
 
 test('rate', async ({ page }) => {
-	await page.goto('/rate.html');
+	await page.goto('/rate');
 
 	await expect(page).toHaveTitle(/Rate/);
 });
 
 test('preference', async ({ page }) => {
-	await page.goto('/preference.html');
+	await page.goto('/4_preference');
 
 	await expect(page).toHaveTitle(/Preference/);
 });
