@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Rate</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <meta itemprop="description" content="Rate this image" />
+    <link rel="stylesheet" href="/static/main.css" />
+    <link rel="stylesheet" href="/static/rate/rate.css" />
+  </head>
+  <body>
+    <main>
+      <form id="rate">
+        <div class="image">
+          <img id="image" src="/static/images.png" />
+        </div>
+        <section class="rating">
+          <div class="rating-interaction">
+            <div class="back">
+              <input id="back" type="button" value="Back" loading="lazy" />
+            </div>
+            <div class="interaction">
+              <div class="down">
+                <input id="minus-minus" type="submit" value="--" />
+                <input id="minus" type="submit" value="-" />
+              </div>
+              <div class="rating-score">
+                <div class="prediction-block">
+                  <div id="predicted"></div>
+                  <div class="note">predicted</div>
+                </div>
+                <div class="rating-block">
+                  <div id="rating"></div>
+                  <div class="note">rating</div>
+                </div>
+              </div>
+              <div class="up">
+                <input id="plus" type="submit" value="+" />
+                <input id="plus-plus" type="submit" value="++" />
+              </div>
+            </div>
+            <div class="skip">
+              <input id="skip" type="button" value="Skip" />
+            </div>
+          </div>
+          <div class="note">Rate the image</div>
+        </section>
+      </form>
+    </main>
+    <!-- <div id="score-container" class="score"><div id="score-value"></div></div> -->
+    <footer>
+      <nav>
+        <ul>
+          <li><a href="/">Score image</a></li>
+          <li><a href="/rate">Rate diff</a></li>
+          <li><a href="/ratings">Ratings</a></li>
+          <li><a href="/4_preference">4 Preference</a></li>
+          <li><a href="/preference">Preference</a></li>
+          <li><a href="/similarity">Similarity</a></li>
+        </ul>
+      </nav>
+    </footer>
+		<script type="module" src="/static/rate/rate.js"></script>
+  </body>
+</html>

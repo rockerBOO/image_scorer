@@ -105,6 +105,16 @@ pub fn get_or_create_by_hash(
   }
 }
 
+pub fn get_id_by_hash(conn, hash) -> Result(Option(Int), error.Error) {
+  sqlight.query(
+    "select id from images where hash = ?",
+    on: conn,
+    with: [sqlight.text(hash)],
+    expecting: element(0, int),
+  )
+  |> single_image()
+}
+
 pub fn get_by_hash(conn, hash) -> Result(Option(Image), error.Error) {
   sqlight.query(
     "select id, hash, name, created from images where hash = ?;",

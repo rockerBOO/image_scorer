@@ -1,3 +1,21 @@
+body {
+  display: grid;
+  grid-template-rows: 90% auto;
+}
+
+main {
+	max-height: 100%;
+}
+
+form {
+	max-height: 100%;
+}
+
+footer {
+	display: grid;
+	padding: 0.5em 0;
+	align-items: flex-end;
+}
 
 input[type="button"],
 input[type="submit"] {
@@ -35,7 +53,7 @@ input[type="submit"]:focus {
 #rate {
   display: grid;
   justify-items: center;
-  grid-template-rows: 3fr 1fr;
+	height: 100%;
 }
 
 .rate {
@@ -44,7 +62,6 @@ input[type="submit"]:focus {
 
 section.rating {
   display: grid;
-  grid-template-rows: 1fr 1fr;
   justify-items: center;
 }
 
@@ -74,6 +91,7 @@ section.rating {
 
 .rating-score {
   display: grid;
+	grid-auto-flow: column;
   justify-items: center;
   align-items: center;
 }

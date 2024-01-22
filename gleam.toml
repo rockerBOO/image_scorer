@@ -21,6 +21,7 @@ gleam_json = "~> 0.7"
 filepath = "~> 0.1"
 glisten = "~> 0.9"
 migrant = "~> 0.2"
+gleescript = "~> 1.0"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

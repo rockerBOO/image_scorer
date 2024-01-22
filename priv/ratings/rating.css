@@ -1,0 +1,48 @@
+main {
+  display: grid;
+  place-items: center;
+}
+
+#images {
+  display: grid;
+  /* grid-template-columns: repeat(auto-fit, minmax(35vmin, 35vmax)); */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-gap: 5vmin;
+  margin: 5vmin;
+  width: 90%;
+  place-items: center;
+  justify-content: center;
+}
+
+.block {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  grid-template-areas: "box";
+}
+
+#images > div > *,
+#images > div::before {
+  grid-area: box;
+}
+
+.block > img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+  max-height: 40vh;
+}
+
+.prediction {
+  background-color: hsl(180, 100%, 2.5%, 0.5);
+  padding: 0.5em;
+  border-top-left-radius: 0.5em;
+  place-self: end;
+}
+
+.rating {
+  background-color: hsl(180, 100%, 2.5%, 0.5);
+  padding: 0.5em;
+  border-top-right-radius: 0.5em;
+  place-self: end start;
+}

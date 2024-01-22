@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Image scorer</title>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,shrink-to-fit=no"
+    />
+    <meta charset="utf-8" />
+    <meta itemprop="description" content="Rate this image" />
+    <link rel="stylesheet" href="/static/main.css" />
+    <link rel="stylesheet" href="/static/scores/index.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Image score</h1>
+      <form id="rating">
+        <div>
+          <img id="image" src="/static/images.png" />
+          <div id="score"></div>
+        </div>
+        <div id="ratings">
+          <div class="back">
+            <input id="back" type="button" value="Back" loading="lazy" />
+          </div>
+          <div>
+            <input type="submit" value="1" />
+            <input type="submit" value="2" />
+            <input type="submit" value="3" />
+            <input type="submit" value="4" />
+            <input type="submit" value="5" />
+            <input type="submit" value="6" />
+            <input type="submit" value="7" />
+            <input type="submit" value="8" />
+            <input type="submit" value="9" />
+            <input type="submit" value="10" />
+          </div>
+          <div class="skip"><input id="skip" type="button" value="Skip" /></div>
+        </div>
+      </form>
+    </main>
+    <div id="score-container" class="score"><div id="score-value"></div></div>
+    <footer>
+      <nav>
+        <ul>
+          <li><a href="/">Score image</a></li>
+          <li><a href="/rate">Rate diff</a></li>
+          <li><a href="/ratings">Ratings</a></li>
+          <li><a href="/4_preference">4 Preference</a></li>
+          <li><a href="/preference">Preference</a></li>
+          <li><a href="/similarity">Similarity</a></li>
+        </ul>
+      </nav>
+    </footer>
+    <script type="module" src="/static/scores/index.js"></script>
+  </body>
+</html>

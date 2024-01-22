@@ -55,11 +55,12 @@ pub fn main() {
         ["images", ..rest] -> serve_image(req, rest)
         ["static", ..rest] -> serve_file(req, rest, priv)
         ["form"] -> handle_form(req, conn)
-        ["preference.html"] -> serve_file(req, ["preference.html"], priv)
-        ["similarity.html"] -> serve_file(req, ["similarity.html"], priv)
-        ["ratings.html"] -> serve_file(req, ["ratings.html"], priv)
-        ["rate.html"] -> serve_file(req, ["rate.html"], priv)
-        ["index.html"] -> serve_index_file(req, priv)
+        ["4_preference"] -> serve_file(req, ["4_preference/index.html"], priv)
+        ["preference"] -> serve_file(req, ["2_preference/index.html"], priv)
+        ["similarity"] -> serve_file(req, ["similarity/index.html"], priv)
+        ["ratings"] -> serve_file(req, ["ratings/index.html"], priv)
+        ["rate"] -> serve_file(req, ["rate/index.html"], priv)
+        ["index"] -> serve_index_file(req, priv)
         ["api", ..rest] -> serve_api(req, conn, rest)
         [] -> serve_index_file(req, priv)
         _ -> not_found
@@ -112,7 +113,16 @@ fn process_new_score(conn, user_id, json) {
     dynamic.decode2(
       image_score.NewFromHash,
       dynamic.field("image_hash", dynamic.string),
-      dynamic.field("score", dynamic.float),
+      dynamic.field(
+        "score",
+        dynamic.any([
+          dynamic.float,
+          fn(x) {
+            dynamic.int(x)
+            |> result.map(fn(i) { int.to_float(i) })
+          },
+        ]),
+      ),
     )
 
   let assert Ok(image_score.NewFromHash(hash, score)) =
@@ -124,20 +134,57 @@ fn process_new_score(conn, user_id, json) {
 
   let assert Ok(_) = image_score.create_from_hash(conn, hash, user_id, score)
 
-  case image_score.get_image_score_by_hash(conn, hash) {
-    Ok(Some(score)) ->
-      Ok(object([
-        #("messageType", string("get_image_score")),
-        #("ok", float(score)),
-      ]))
-    Error(e) -> {
-      io.debug(e)
-      Ok(object([
-        #("messageType", string("get_image_score")),
-        #("error", string("Could not make the result")),
-      ]))
+  let assert Ok(id_result) = image.get_id_by_hash(conn, hash)
+
+  case
+    id_result
+    |> option.map(fn(id) { image_score.get_image_score(conn, id) })
+  {
+    Some(Ok(score)) ->
+      Ok(
+        object([
+          #("messageType", string("get_image_score")),
+          #("score", float(score)),
+        ]),
+      )
+    Some(Error(error)) -> {
+      io.println("Error getting score")
+      io.debug(error)
+      Error(error.Message("Error getting score"))
     }
+    None ->
+      Ok(
+        object([
+          #("messageType", string("get_image_score")),
+          #("error", string("Could not make the result")),
+        ]),
+      )
   }
+  // case image_score.get_image_score(conn, hash) {
+  //   Ok(Some(score)) ->
+  //     Ok(
+  //       object([
+  //         #("messageType", string("get_image_score")),
+  //         #("score", float(score)),
+  //       ]),
+  //     )
+  //   Ok(None) ->
+  //     Ok(
+  //       object([
+  //         #("messageType", string("get_image_score")),
+  //         #("error", string("No image to score")),
+  //       ]),
+  //     )
+  //   Error(e) -> {
+  //     io.debug(e)
+  //     Ok(
+  //       object([
+  //         #("messageType", string("get_image_score")),
+  //         #("error", string("Could not make the result")),
+  //       ]),
+  //     )
+  //   }
+  // }
 }
 
 /// {messageType: "prefer", image_hash: "91jdoks", others: [{ image_hash: "" }]}
@@ -172,10 +219,12 @@ pub fn process_new_preference(
       |> result.unwrap_both()
     })
 
-  Ok(object([
-    #("messageType", string("pick_preference")),
-    #("results", json.preprocessed_array(results)),
-  ]))
+  Ok(
+    object([
+      #("messageType", string("pick_preference")),
+      #("results", json.preprocessed_array(results)),
+    ]),
+  )
   // case x {
   //   Ok(v) ->
   //     Ok(object([
@@ -203,26 +252,35 @@ pub fn process_get_image_score(conn, json) -> Result(json.Json, error.Error) {
     Some(image.Image(id, _hash, _name, _created)) ->
       case image_score.get_image_score(conn, id) {
         Ok(0.0) -> None
-        Ok(v) -> Some(v)
+        Ok(v) ->
+          Some(
+            v
+            |> io.debug(),
+          )
         Error(e) -> {
           io.debug(e)
           None
         }
       }
+    Some(image.Hash(_)) -> None
+    Some(image.Id(_)) -> None
+    Some(image.New(_, _)) -> None
+    Some(image.UserImage(_, _, _, _)) -> None
     None -> None
   }
 
   case result {
     Some(score) ->
-      Ok(object([
-        #("messageType", string("get_image_score")),
-        #("score", float(score)),
-      ]))
+      Ok(
+        object([
+          #("messageType", string("get_image_score")),
+          #("score", float(score)),
+        ]),
+      )
     None ->
-      Ok(object([
-        #("messageType", string("get_image_score")),
-        #("score", null()),
-      ]))
+      Ok(
+        object([#("messageType", string("get_image_score")), #("score", null())]),
+      )
   }
 }
 
@@ -262,10 +320,12 @@ pub fn process_get_images_score(conn, json) -> Result(json.Json, error.Error) {
     })
 
   // io.debug(scores)
-  Ok(object([
-    #("messageType", string("get_image_scores")),
-    #("scores", json.preprocessed_array(scores)),
-  ]))
+  Ok(
+    object([
+      #("messageType", string("get_image_scores")),
+      #("scores", json.preprocessed_array(scores)),
+    ]),
+  )
   // Ok(object([
   //   #("messageType", string("get_image_scores")),
   //   #("scores", string("hi")),
@@ -299,6 +359,7 @@ fn handle_error(
 }
 
 fn handle_response(resp, send: fn(json.Json) -> Result(_, error.Error)) {
+  io.println("HANDLE RESPONSE")
   resp
   |> result.then(fn(json) {
     let assert Ok(_) =
@@ -310,7 +371,7 @@ fn handle_response(resp, send: fn(json.Json) -> Result(_, error.Error)) {
 
 fn handle_json_message(
   state: Socket,
-  send: fn(json.Json) -> Result(_, error.Error),
+  send: fn(json.Json) -> Result(Nil, error.Error),
   json: BitArray,
 ) {
   case message.decode_type(json) {
@@ -329,6 +390,39 @@ fn handle_json_message(
     Ok(message.RatingType("get_image_score")) ->
       process_get_image_score(state.conn, json)
       |> handle_response(send)
+    Ok(message.Broadcast(broadcast)) -> {
+      io.debug(broadcast)
+      let assert Ok(_) =
+        send(
+          object([
+            #("message_type", string("broadcast")),
+            #("error", string("invalid")),
+          ]),
+        )
+      Error(Nil)
+    }
+    Ok(message.PreferenceType(preference_type)) -> {
+      io.debug(preference_type)
+      let assert Ok(_) =
+        send(
+          object([
+            #("message_type", string("preference_type")),
+            #("error", string("invalid")),
+          ]),
+        )
+      Ok(Nil)
+    }
+    Ok(message.RatingType(rating)) -> {
+      io.debug(rating)
+      let assert Ok(_) =
+        send(
+          object([
+            #("message_type", string("rating_type")),
+            #("error", string("invalid")),
+          ]),
+        )
+      Ok(Nil)
+    }
 
     // Ok(message.RatingType("get_score")) ->
     //   process_new_preference(state.conn, json)
@@ -342,12 +436,15 @@ fn handle_json_message(
     //   process_new_preference(state.conn, state.user_id, json)
     //   |> handle_response(send)
     Error(error) -> {
+      io.println("Unhandled")
       io.debug(error)
       let assert Ok(_) =
-        send(object([
-          #("message_type", string("get_rating")),
-          #("error", string("invalid")),
-        ]))
+        send(
+          object([
+            #("message_type", string("unhandled")),
+            #("error", string("invalid")),
+          ]),
+        )
       Error(Nil)
     }
   }
@@ -358,7 +455,7 @@ pub fn encode_bit_array(json_input: json.Json) -> BitArray {
 }
 
 fn handle_ws_message(state: Socket, conn, message) {
-  let send = fn(message: json.Json) {
+  let send = fn(message: json.Json) -> Result(_, error.Error) {
     function.curry2(mist.send_binary_frame)(conn)(
       message
       |> encode_bit_array,
@@ -372,10 +469,20 @@ fn handle_ws_message(state: Socket, conn, message) {
     }
     mist.Custom(message.Broadcast(text)) -> {
       let assert Ok(_) =
-        send(object([
-          #("message_type", string("broadcast")),
-          #("text", string(text)),
-        ]))
+        send(
+          object([
+            #("message_type", string("broadcast")),
+            #("text", string(text)),
+          ]),
+        )
+      actor.continue(state)
+    }
+    mist.Custom(message.PreferenceType(_)) -> {
+      io.println("Unhandled preference type")
+      actor.continue(state)
+    }
+    mist.Custom(message.RatingType(_)) -> {
+      io.println("Unhandled rating type")
       actor.continue(state)
     }
     mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)
@@ -436,7 +543,7 @@ fn serve_index_file(
   _req: Request(Connection),
   priv: String,
 ) -> Response(ResponseData) {
-  let index = filepath.join(priv, "index.html")
+  let index = filepath.join(priv, "scores/index.html")
   // Omitting validation for brevity
   mist.send_file(index, offset: 0, limit: None)
   |> result.map(fn(file) {
@@ -471,6 +578,10 @@ fn guess_content_type(path: String) -> String {
     Ok("css") -> "text/css"
     Ok("js") -> "text/javascript"
     Ok("json") -> "application/json"
+    Ok(unhandled) -> {
+      io.println_error("Unhandled content type " <> unhandled)
+      "application/octet-stream"
+    }
     Error(_e) -> "application/octet-stream"
   }
 }
